@@ -13,11 +13,11 @@ import {
 
 /** Everything except the custom field expansion, which is what a `fields` fallback drops. */
 const CONTACT_LIST_BASE_FIELDS =
-  "id,name,email_addresses{address,name},phone_numbers{number,name},company{id,name},type";
+  "id,name,email_addresses{id,address,name},phone_numbers{id,number,name},company{id,name},type";
 const CONTACT_LIST_FIELDS = `${CONTACT_LIST_BASE_FIELDS},${CUSTOM_FIELD_VALUE_FIELDS}`;
 
 const CONTACT_DETAIL_BASE_FIELDS =
-  "id,name,first_name,last_name,title,email_addresses{address,name},phone_numbers{number,name},company{id,name},type,created_at,updated_at,addresses{name,street,city,province,postal_code,country}";
+  "id,etag,name,first_name,last_name,title,email_addresses{id,address,name},phone_numbers{id,number,name},company{id,name},type,created_at,updated_at,addresses{id,name,street,city,province,postal_code,country}";
 const CONTACT_DETAIL_FIELDS = `${CONTACT_DETAIL_BASE_FIELDS},${CUSTOM_FIELD_VALUE_FIELDS}`;
 
 /** Warnings that belong on a contact response, given what came back on it. */
@@ -108,15 +108,17 @@ export function registerContactTools(server: McpServer): void {
 
         const result = {
           id: c.id,
+          etag: c.etag,
           name: c.name,
           first_name: c.first_name ?? null,
           last_name: c.last_name ?? null,
           title: c.title ?? null,
           type: c.type,
           company: c.company ? { id: c.company.id, name: c.company.name } : null,
-          emails: (c.email_addresses ?? []).map((e: any) => ({ label: e.name, address: e.address })),
-          phone_numbers: (c.phone_numbers ?? []).map((p: any) => ({ label: p.name, number: p.number })),
+          emails: (c.email_addresses ?? []).map((e: any) => ({ id: e.id, label: e.name, address: e.address })),
+          phone_numbers: (c.phone_numbers ?? []).map((p: any) => ({ id: p.id, label: p.name, number: p.number })),
           addresses: (c.addresses ?? []).map((a: any) => ({
+            id: a.id,
             label: a.name,
             street: a.street ?? null,
             city: a.city ?? null,

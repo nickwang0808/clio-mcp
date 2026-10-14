@@ -1,3 +1,5 @@
+> Local development fork: contact, matter and note CRUD additions are described in [docs/crud.md](docs/crud.md). These additions have mocked HTTP coverage; live Clio validation requires an authorized account.
+
 # Clio MCP Server: Connect Claude to Clio Practice Management
 
 > ### Built by [Oktopeak](https://oktopeak.com/?utm_source=github&utm_medium=readme&utm_campaign=clio-mcp&utm_content=top-byline): AI transformation & automation for law firms
@@ -9,7 +11,7 @@
 
 Open-source Model Context Protocol (MCP) connector that lets Claude read live data from [Clio](https://www.clio.com) (matters, custom fields, notes, contacts, documents, folders, tasks, calendar, and billing) without copying client information into chat windows. Built for law firms that care about attorney-client privilege, ABA Opinion 512 compliance, and keeping AI workflows inside their existing practice management stack.
 
-> **TL;DR:** 37 Clio tools exposed to Claude across stdio and HTTP/SSE transports. Audit-logged for ABA Opinion 512. OAuth tokens encrypted at rest with AES-256-GCM. Local-only by default: you register your own Clio developer app, and no relay server sits in between. A separate one-click "listed" variant for the Clio App Directory uses a minimal login-only broker instead, see [Listed / one-click install variant](#listed--one-click-install-variant-app-directory). MIT license, free forever.
+> **TL;DR:** 45 Clio tools exposed to Claude across stdio and HTTP/SSE transports. Audit-logged for ABA Opinion 512. OAuth tokens encrypted at rest with AES-256-GCM. Local-only by default: you register your own Clio developer app, and no relay server sits in between. A separate one-click "listed" variant for the Clio App Directory uses a minimal login-only broker instead, see [Listed / one-click install variant](#listed--one-click-install-variant-app-directory). MIT license, free forever.
 
 **Who this is for:** Law firm IT, legal operations teams, tech-forward partners, and engineers at legal tech companies. If you can follow a five-step terminal install, you can use this.
 
@@ -70,7 +72,7 @@ ABA Opinion 512 (2023) requires attorneys using AI tools to understand how those
 
 - **No data retention by the connector.** The connector does not store matter data, client names, or any Clio content. It fetches from the API and passes results to Claude. The only thing persisted locally is your authentication token, and that is encrypted (see below).
 
-- **Twelve write tools, all logged, all optional.** The connector can create matters, custom fields, notes, tasks, folders, calendar entries, time entries and activities, update matters and tasks, complete tasks, and upload documents. It never deletes anything and never touches contacts or billing records. Every write is recorded in the audit log, and `READ_ONLY=true` removes all twelve write tools from the server entirely (see [Read-only mode](#read-only-mode)), so a firm can start with read access and turn writes on when it has decided to.
+- **Eighteen write tools, all logged, all optional.** The connector can create matters, custom fields, notes, tasks, folders, calendar entries, time entries and activities, update matters and tasks, complete tasks, and upload documents. This development fork adds contact writes and deletion of contacts, matters and notes; it does not write billing records. Every write is recorded in the audit log, and `READ_ONLY=true` removes all eighteen write tools from the server entirely (see [Read-only mode](#read-only-mode)), so a firm can start with read access and turn writes on when it has decided to.
 
 ### Token security: encryption at rest
 
@@ -256,7 +258,7 @@ pwd
 2. Click **Developer Apps → Add**
 3. Give it a name (e.g., *Claude Connector*)
 4. Set the redirect URI to exactly: `http://127.0.0.1:5678/callback`
-5. Save the application
+5. Enable read/write access for Contacts, Matters and Notes for CRUD (and other resource permissions needed by your workflow), then save the application. Reauthorize after changing permissions.
 6. Copy the **Client ID** and **Client Secret**; you will need them in the next step
 
 ### Step 3: Configure Claude Desktop
@@ -398,7 +400,7 @@ Claude selects and calls these tools automatically based on your questions. You 
 | `auth_status` | Shows whether you are currently authenticated and when your session expires |
 | `logout` | Clears your stored credentials from this machine |
 
-### Matters (4 tools)
+### Matters (5 tools)
 
 | Tool | Inputs | What it does |
 |---|---|---|
@@ -406,6 +408,8 @@ Claude selects and calls these tools automatically based on your questions. You 
 | `get_matter` | `matter_id` | Returns full detail for a specific matter, including its Maildrop forwarding address and custom field values |
 | `create_matter` | `client_id`, `description`, `status`, `open_date`, `practice_area_id`, `billable`, `responsible_attorney_id`, `originating_attorney_id`, `client_reference`, `custom_field_values` | Creates a new matter; status defaults to Open, billable defaults to true |
 | `update_matter` | `matter_id`, plus any of `create_matter`'s optional fields | Updates one or more fields on an existing matter, including its stage and custom field values |
+
+| `delete_matter` | `matter_id` | Delete one matter; Clio permissions and dependencies apply |
 
 ### Custom fields (2 tools)
 
@@ -420,12 +424,17 @@ Claude selects and calls these tools automatically based on your questions. You 
 |---|---|---|
 | `list_matter_stages` | `practice_area_id` | Lists the account's matter stages (Pre-Suit, Discovery, Settlement and so on) grouped by practice area and in pipeline order. Call this before setting `matter_stage_id`. Clio can attach workflows and task lists to a stage; whether an API-driven stage change fires them is not verified, so confirm on one matter before relying on it |
 
-### Contacts (2 tools)
+### Contacts (6 tools)
 
 | Tool | Inputs | What it does |
 |---|---|---|
 | `search_contacts` | `query`, `limit`, `page_token` | Searches contacts by name, email, or company; returns a paginated envelope with `total_count`, `has_more`, and `next_page_token`; pass the token back to fetch the next page |
 | `get_contact` | `contact_id` | Returns full detail for a specific contact including all emails, phone numbers, addresses, and custom field values |
+
+| `list_contacts` | Optional `type`/`client_only`, `limit`, `page_token` | Enumerate contacts without a search string |
+| `create_contact` | `type`, name components, company and nested associations | Create a Person or Company |
+| `update_contact` | `contact_id`, supplied fields, optional `etag` | Patch contact fields and nested associations |
+| `delete_contact` | `contact_id` | Delete one contact |
 
 ### Relationships (1 tool)
 
@@ -481,12 +490,16 @@ Claude selects and calls these tools automatically based on your questions. You 
 |---|---|---|
 | `get_billing_summary` | `matter_id` | Returns total billed, outstanding balance, and last invoice date for a matter |
 
-### Notes (2 tools)
+### Notes (5 tools)
 
 | Tool | Inputs | What it does |
 |---|---|---|
-| `create_note` | `matter_id`, `subject`, `body` | Creates a note on a matter; appears in Clio's matter timeline |
+| `create_note` | Exactly one of `matter_id`/`contact_id`, `subject`, `body`, optional `date` | Creates a note on a matter or contact |
 | `list_notes` | `matter_id` **or** `contact_id`, `created_since`, `updated_since`, `limit`, `page_token` | Lists notes with subject, author, the note's own date, and the body as plain text (rich-text markup is kept on `detail_html`) |
+
+| `get_note` | `note_id` | Read original note body, association and etag |
+| `update_note` | `note_id`, subject/body/date, optional `etag` | Update supplied note fields |
+| `delete_note` | `note_id` | Delete one note |
 
 ### Reporting (1 tool)
 
@@ -540,11 +553,11 @@ All settings are passed as environment variables (in your Claude Desktop config 
 | `CLIO_API_BASE` | No | `<region host>/api/v4` | Advanced override for the API base URL. Takes precedence over `CLIO_REGION` |
 | `CLIO_AUTH_URL` | No | `<region host>/oauth/authorize` | Advanced override for the OAuth authorization endpoint |
 | `CLIO_TOKEN_URL` | No | `<region host>/oauth/token` | Advanced override for the OAuth token endpoint |
-| `READ_ONLY` | No | `false` | `true`, `1` or `yes` leaves the twelve write tools unregistered so Claude can read Clio but never change it. Works on both transports. See [Read-only mode](#read-only-mode) |
+| `READ_ONLY` | No | `false` | `true`, `1` or `yes` leaves the eighteen write tools unregistered so Claude can read Clio but never change it. Works on both transports. See [Read-only mode](#read-only-mode) |
 
 ### Read-only mode
 
-Set `READ_ONLY=true` and the connector never registers its twelve write tools (`create_matter`, `update_matter`, `create_custom_field`, `create_note`, `create_task`, `update_task`, `complete_task`, `create_calendar_entry`, `log_time_entry`, `create_activity`, `upload_document`, `create_folder`). They do not appear in Claude's tool list and a call to any of them is rejected by the server, so this is a server-side guarantee rather than a client-side prompt. The read tools, the auth tools and the audit export keep working. Without it, the only thing standing between Claude and a write is the approval prompt your MCP client shows, which belongs to the client, not to this connector.
+Set `READ_ONLY=true` and the connector never registers its eighteen write tools (`create_contact`, `update_contact`, `delete_contact`, `delete_matter`, `update_note`, `delete_note`, `create_matter`, `update_matter`, `create_custom_field`, `create_note`, `create_task`, `update_task`, `complete_task`, `create_calendar_entry`, `log_time_entry`, `create_activity`, `upload_document`, `create_folder`). They do not appear in Claude's tool list and a call to any of them is rejected by the server, so this is a server-side guarantee rather than a client-side prompt. The read tools, the auth tools and the audit export keep working. Without it, the only thing standing between Claude and a write is the approval prompt your MCP client shows, which belongs to the client, not to this connector.
 
 For Claude Desktop, add it next to the other variables:
 

@@ -15,6 +15,7 @@
 import type { McpServer, RegisteredTool } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAuthTools } from "../auth/authTools.js";
 import { registerResources } from "../resources/index.js";
+import { registerCrudTools } from "./crud.js";
 import { registerMatterTools } from "./matters.js";
 import { registerContactTools } from "./contacts.js";
 import { registerDocumentTools } from "./documents.js";
@@ -44,6 +45,12 @@ export interface ToolMeta {
 
 /** Tools that write to Clio. Hidden entirely when READ_ONLY is on. */
 export const WRITE_TOOLS: ReadonlySet<string> = new Set([
+  "create_contact",
+  "update_contact",
+  "delete_contact",
+  "delete_matter",
+  "update_note",
+  "delete_note",
   "create_matter",
   "create_custom_field",
   "upload_document",
@@ -69,6 +76,14 @@ export const TOOL_META: Readonly<Record<string, ToolMeta>> = {
   auth_status: { title: "Auth status", readOnly: true },
   authenticate: { title: "Authenticate with Clio", readOnly: false, destructive: false, idempotent: true },
   logout: { title: "Log out of Clio", readOnly: false, destructive: false, idempotent: true },
+  list_contacts: { title: "List contacts", readOnly: true },
+  create_contact: { title: "Create contact", readOnly: false },
+  update_contact: { title: "Update contact", readOnly: false },
+  delete_contact: { title: "Delete contact", readOnly: false, destructive: true, idempotent: true },
+  delete_matter: { title: "Delete matter", readOnly: false, destructive: true, idempotent: true },
+  get_note: { title: "Get note", readOnly: true },
+  update_note: { title: "Update note", readOnly: false, idempotent: true },
+  delete_note: { title: "Delete note", readOnly: false, destructive: true, idempotent: true },
   // matters
   list_matters: { title: "List matters", readOnly: true },
   get_matter: { title: "Get matter", readOnly: true },
@@ -121,6 +136,7 @@ export const TOOL_META: Readonly<Record<string, ToolMeta>> = {
 
 /** Registration order is stable so tool lists are deterministic across transports. */
 export const REGISTRARS: ReadonlyArray<(server: McpServer) => void> = [
+  registerCrudTools,
   registerMatterTools,
   registerContactTools,
   registerDocumentTools,

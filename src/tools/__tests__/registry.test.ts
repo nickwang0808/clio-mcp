@@ -41,6 +41,25 @@ async function listTools(opts?: RegisterAllToolsOptions) {
 }
 
 describe("registerAllTools", () => {
+  it("exposes CRUD schemas and rejects mutations in read-only mode", async () => {
+    const { client, server, tools } = await listTools({ readOnly: true });
+    const names = new Set(tools.map(t => t.name));
+    expect(names.has("list_contacts")).toBe(true); expect(names.has("get_note")).toBe(true);
+    for (const tool of ["create_contact", "update_contact", "delete_contact", "delete_matter", "update_note", "delete_note"]) {
+      expect(names.has(tool)).toBe(false);
+      const result = await client.callTool({ name: tool, arguments: { contact_id: 1, matter_id: 1, note_id: 1 } });
+      expect(result.isError).toBe(true);
+      expect(JSON.stringify(result.content)).toContain(tool + " not found");
+    }
+    await client.close(); await server.close();
+  });
+  it("validates CRUD identifiers at the MCP boundary before HTTP", async () => {
+    const { client, server } = await listTools();
+    const result = await client.callTool({ name: "delete_contact", arguments: { contact_id: -1 } });
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toContain("greater than 0");
+    await client.close(); await server.close();
+  });
   it("registers exactly the tools TOOL_META declares", async () => {
     const { tools, registered } = await listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(ALL_TOOLS);

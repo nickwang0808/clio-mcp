@@ -119,6 +119,14 @@ export const AUDIT_ARG_ALLOWLIST: RedactPolicy = {
   authenticate: [],
   logout: [],
   oauth_callback: [],
+  list_contacts: ["type", "client_only", "limit", "page_token"],
+  create_contact: ["type", "company_id"],
+  update_contact: ["contact_id", "type", "company_id"],
+  delete_contact: ["contact_id"],
+  delete_matter: ["matter_id"],
+  get_note: ["note_id"],
+  update_note: ["note_id", "date", "detail_text_type"],
+  delete_note: ["note_id"],
   // matters
   list_matters: ["status", "limit"],
   get_matter: ["matter_id"],
@@ -161,7 +169,7 @@ export const AUDIT_ARG_ALLOWLIST: RedactPolicy = {
   // billing
   get_billing_summary: ["matter_id"],
   // notes (never subject or body)
-  create_note: ["matter_id"],
+  create_note: ["matter_id", "contact_id", "date"],
   list_notes: ["matter_id", "contact_id", "created_since", "updated_since", "limit", "page_token"],
   // users (never the name filter)
   list_users: ["subscription_type", "enabled", "limit"],

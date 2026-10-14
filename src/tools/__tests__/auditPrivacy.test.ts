@@ -47,6 +47,7 @@ vi.mock("../../utils/clioClient.js", () => ({
   clioGet: mockClioGet,
   clioPost: mockClioPost,
   clioPatch: mockClioPatch,
+  clioDelete: vi.fn().mockResolvedValue(undefined),
   clioGetAllPages: mockClioGetAllPages,
   ClioApiError: MockClioApiError,
   extractNextPageToken: () => null,
@@ -56,6 +57,7 @@ vi.mock("../../utils/auditLog.js", () => ({
   appendAuditLog: mockAppendAuditLog,
 }));
 
+import { registerCrudTools } from "../crud.js";
 import { registerMatterTools } from "../matters.js";
 import { registerContactTools } from "../contacts.js";
 import { registerNoteTools } from "../notes.js";
@@ -72,6 +74,7 @@ const fakeServer = {
 };
 
 beforeAll(() => {
+  registerCrudTools(fakeServer as any);
   registerMatterTools(fakeServer as any);
   registerContactTools(fakeServer as any);
   registerNoteTools(fakeServer as any);
@@ -97,6 +100,14 @@ const CANARIES = [
 
 /** Every tool that takes free text or a value, with args carrying a canary. */
 const CASES: { tool: string; args: Record<string, unknown> }[] = [
+  { tool: "list_contacts", args: { limit: 25 } },
+  { tool: "create_contact", args: { type: "Person", first_name: "SUSPECTEDTHIEFNAME", email_addresses: [{ address: "INTAKENARRATIVE@example.test" }], custom_field_values: [{ custom_field: { id: 10 }, value: "LOSSAMOUNT47300" }] } },
+  { tool: "update_contact", args: { contact_id: 1, name: "SUSPECTEDTHIEFNAME", addresses: [{ street: "INTAKENARRATIVE" }] } },
+  { tool: "delete_contact", args: { contact_id: 1 } },
+  { tool: "delete_matter", args: { matter_id: 1 } },
+  { tool: "get_note", args: { note_id: 1 } },
+  { tool: "update_note", args: { note_id: 1, subject: "INTAKENARRATIVE", body: "SUSPECTEDTHIEFNAME" } },
+  { tool: "delete_note", args: { note_id: 1 } },
   { tool: "create_matter", args: { client_id: 1, description: "INTAKENARRATIVE", status: "open", billable: true, custom_field_values: [{ custom_field_id: 10, value: "LOSSAMOUNT47300" }] } },
   { tool: "update_matter", args: { matter_id: 42, description: "INTAKENARRATIVE", custom_field_values: [{ custom_field_id: 10, value: "SUSPECTEDTHIEFNAME" }] } },
   { tool: "search_contacts", args: { query: "SEARCHQUERYCANARY", limit: 25 } },

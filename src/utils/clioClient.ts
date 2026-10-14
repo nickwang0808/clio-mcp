@@ -170,7 +170,7 @@ export async function clioPost(path: string, body: unknown, params?: Record<stri
   return res.json();
 }
 
-export async function clioPatch(path: string, body: unknown, params?: Record<string, string>): Promise<any> {
+export async function clioPatch(path: string, body: unknown, params?: Record<string, string>, etag?: string): Promise<any> {
   const token = await resolveAccessToken();
   const url = new URL(`${getBase()}${path}`);
   if (params) {
@@ -178,7 +178,7 @@ export async function clioPatch(path: string, body: unknown, params?: Record<str
   }
   const res = await clioFetch(url.toString(), {
     method: "PATCH",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(etag ? { "If-Match": etag } : {}) },
     body: JSON.stringify(body),
   });
   const text = await res.text();
@@ -249,4 +249,13 @@ export async function clioGetWithFieldFallback(
         `https://github.com/oktopeak/clio-mcp/issues quoting: ${err.message}`,
     };
   }
+}
+
+/** Clio DELETE returns 204 No Content; do not attempt to parse JSON. */
+export async function clioDelete(path: string): Promise<void> {
+  const token = await resolveAccessToken();
+  await clioFetch(new URL(getBase() + path).toString(), {
+    method: "DELETE",
+    headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+  });
 }

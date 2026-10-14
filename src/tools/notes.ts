@@ -11,29 +11,33 @@ export function registerNoteTools(server: McpServer): void {
   server.registerTool(
     "create_note",
     {
-      description: "Create a note on a matter in Clio",
+      description: "Create a note on a matter or contact in Clio; provide exactly one association",
       inputSchema: {
-        matter_id: z.number().int().positive().describe("Matter ID to attach the note to"),
+        matter_id: z.number().int().positive().optional().describe("Matter ID to attach the note to"),
+        contact_id: z.number().int().positive().optional().describe("Contact ID to attach the note to"),
+        date: z.string().date().optional().describe("Note date (YYYY-MM-DD)"),
         subject: z.string().min(1).describe("Note subject / title"),
         body: z.string().min(1).describe("Note body text"),
       },
     },
-    async ({ matter_id, subject, body }) => {
+    async ({ matter_id, contact_id, date, subject, body }) => {
+      if (!!matter_id === !!contact_id) return { content: [{ type: "text", text: "Error: provide exactly one of matter_id or contact_id" }], isError: true };
       try {
         const data = await clioPost("/notes.json", {
           data: {
             subject,
             detail: body,
             detail_text_type: "plain_text",
-            type: "Matter",
-            matter: { id: matter_id },
+            type: matter_id ? "Matter" : "Contact",
+            ...(matter_id ? { matter: { id: matter_id } } : { contact: { id: contact_id } }),
+            ...(date && { date }),
           },
         }, { fields: "id,subject" });
         const note = data.data;
 
         await appendAuditLog({
           tool: "create_note",
-          args: { matter_id },
+          args: { matter_id, contact_id, date },
           outcome: "success",
           matter_id,
         });
@@ -46,7 +50,7 @@ export function registerNoteTools(server: McpServer): void {
               note: {
                 id: note.id,
                 subject: note.subject,
-                matter_id,
+                ...(matter_id ? { matter_id } : { contact_id }),
               },
             }, null, 2),
           }],
@@ -54,7 +58,7 @@ export function registerNoteTools(server: McpServer): void {
       } catch (err: any) {
         await appendAuditLog({
           tool: "create_note",
-          args: { matter_id },
+          args: { matter_id, contact_id, date },
           outcome: "error",
           error_message: err.message,
           matter_id,

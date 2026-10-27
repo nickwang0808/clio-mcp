@@ -1,0 +1,13 @@
+name: Hosted offline acceptance
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target test -f hosted/Dockerfile -t clio-hosted-test .
+      # Loopback works inside the container; Clio and the public internet do not.
+      - run: docker run --rm --network none clio-hosted-test

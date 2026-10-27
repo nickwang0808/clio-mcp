@@ -102,7 +102,7 @@ These are engineering controls and evidence for your firm's review. They are not
 
 ## Support, maintenance, and license
 
-Use this fork's [issues](https://github.com/nickwang0808/clio-mcp/issues) for ordinary bugs and feature requests. Include the client, approximate time, tool name, and a sanitized error. Do not include credentials or client records. See [SECURITY.md](SECURITY.md) for the current security-reporting status.
+For support, email [nick@highvizcto.com](mailto:nick@highvizcto.com). You can also use this fork's [issues](https://github.com/nickwang0808/clio-mcp/issues) for ordinary bugs and feature requests. Include the client, approximate time, tool name, and a sanitized error. Do not include credentials or client records. Send security reports privately to the same email address; see [SECURITY.md](SECURITY.md) for reporting instructions.
 
 This is a fork of [Oktopeak's Clio MCP](https://github.com/oktopeak/clio-mcp). Original copyright and MIT terms remain in [LICENSE](LICENSE). This fork adds the Canadian hosted service and shared CRUD changes; it is not presented as an official Clio product. Existing npm/package metadata still uses the upstream name, so follow these source-based guides to get this fork's code.
 

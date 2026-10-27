@@ -2,13 +2,13 @@
 
 This policy concerns [nickwang0808/clio-mcp](https://github.com/nickwang0808/clio-mcp) and its Canadian hosted service. The upstream maintainer does not operate this fork's hosted service.
 
-## Reporting status
+## Reporting a vulnerability
 
-A dedicated private security contact and response-time commitment have not yet been published for this fork. Do not send reports about this service to the upstream company's support address.
+Email [nick@highvizcto.com](mailto:nick@highvizcto.com) with the subject **Clio MCP security report**. This is the private security contact for this fork and its Canadian hosted service. No response-time commitment is currently published.
 
-If this repository's **Security** tab offers **Report a vulnerability**, use that private reporting channel. Its availability depends on the repository settings. Otherwise, contact the [maintainer](https://github.com/nickwang0808) to request a private channel before sending details; a public issue requesting contact must contain no exploit details or sensitive data.
+If this repository's **Security** tab offers **Report a vulnerability**, you may also use that private reporting channel. Its availability depends on the repository settings.
 
-Do not put access tokens, client secrets, database files, client records, or exploitable reproduction details in public issues. Once a private channel is established, include the affected commit, hosted/local mode, client, sanitized reproduction steps, approximate time, and suspected impact. Use fictional data and accounts you are authorized to test.
+Include the affected commit, hosted/local mode, client, sanitized reproduction steps, approximate time, and suspected impact. Use fictional data and accounts you are authorized to test. Do not send access tokens, client secrets, database files, or client records, including by email. Keep exploitable reproduction details out of public issues.
 
 ## Review scope and evidence
 

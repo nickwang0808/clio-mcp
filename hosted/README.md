@@ -58,8 +58,11 @@ Configured target: `highvizcto-clio-mcp-ca` at
 GitHub repository variables and `FLY_API_TOKEN` were configured on 2026-10-27;
 the app-scoped deployment token expires after one year and must be rotated before
 2027-10-27. A generated `BETTER_AUTH_SECRET` is staged on the Canadian Fly app.
-Canadian Clio credentials, invited identities, and volume/network provisioning
-are still required before the first successful deployment.
+Canadian Clio credentials have been supplied. A 1 GB `clio_auth` volume in `yyz`
+and public IPv4/IPv6 addresses are provisioned. A temporary initialization Machine
+verified `/data` ownership as `1000:1000` with mode `700` and exited successfully.
+Invited identities are still required before the first successful deployment;
+application startup and mounted-volume permissions must be verified on deployment.
 
 One-time setup in this repository's GitHub Actions settings (repository settings
 or the `production` environment):

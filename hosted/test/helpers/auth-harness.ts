@@ -7,6 +7,8 @@ import { genericOAuth } from "better-auth/plugins";
 import { toNodeHandler } from "better-auth/node";
 import { clioSimulator, close, listen, type Person } from "./clio-simulator.ts";
 import { createTestHostedAuth } from "../../src/auth.ts";
+import { createHostedHttpHandler } from "../../src/http.ts";
+import { navigate } from "./browser.ts";
 
 export async function authHarness({ hosted = false, databasePath = ":memory:", invitations = new Set(["ca:A:11", "ca:A:12", "ca:B:21"]) } = {}) {
   const clio = await clioSimulator();
@@ -49,9 +51,12 @@ export async function authHarness({ hosted = false, databasePath = ":memory:", i
   }, clio.origin);
   let auth = hosted ? await createHost() : betterAuth(options);
   await auth.$context;
-  server.on("request", (req, res) => { void toNodeHandler(auth)(req, res); });
+  server.on("request", (req, res) => {
+    const handler = hosted ? createHostedHttpHandler(auth as Awaited<ReturnType<typeof createTestHostedAuth>>, origin) : toNodeHandler(auth);
+    void handler(req, res);
+  });
 
-  async function login(person: Person) {
+  async function login(person: Person, oauthQuery?: string) {
     const cookies = new Map<string, string>();
     function collect(response: Response) {
       for (const cookie of response.headers.getSetCookie()) {
@@ -66,7 +71,7 @@ export async function authHarness({ hosted = false, databasePath = ":memory:", i
     const start = await fetch(`${origin}/api/auth/sign-in/social`, {
       method: "POST",
       headers: { "content-type": "application/json", origin },
-      body: JSON.stringify({ provider: "clio-ca", callbackURL: `${origin}/connected` }),
+      body: JSON.stringify({ provider: "clio-ca", callbackURL: `${origin}/connected`, ...(oauthQuery ? { oauth_query: oauthQuery } : {}) }),
       redirect: "manual",
     });
     assert.equal(start.status, 200, await start.clone().text());
@@ -75,15 +80,16 @@ export async function authHarness({ hosted = false, databasePath = ":memory:", i
     authorize.searchParams.set("person", person);
     const approved = await fetch(authorize, { redirect: "manual" });
     assert.equal(approved.status, 302);
-    const callback = await fetch(approved.headers.get("location")!, { headers: headers(), redirect: "manual" });
+    const callback = await navigate(approved.headers.get("location")!, headers());
     collect(callback);
-    assert.equal(new URL(callback.headers.get("location")!, origin).pathname, "/connected");
+    const callbackUrl = new URL(callback.headers.get("location")!, origin);
+    assert.equal(callbackUrl.pathname, oauthQuery ? "/consent" : "/connected", await callback.clone().text());
     const session = await auth.api.getSession({ headers: new Headers(headers()) });
     assert.ok(session);
     const account = database.prepare("SELECT id, userId, accessToken, refreshToken FROM account WHERE userId = ?")
       .get(session.user.id) as { id: string; userId: string; accessToken: string; refreshToken: string };
     assert.ok(account);
-    return { account, headers };
+    return { account, headers, callbackUrl };
   }
   return { get auth() { return auth; }, get database() { return database; }, origin, clio, login,
     async restart(path = databasePath) {

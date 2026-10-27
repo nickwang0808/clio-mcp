@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "pretest": "npm --prefix .. run build",
+    "start": "node src/main.ts",
     "test": "node --test test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },

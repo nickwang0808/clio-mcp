@@ -130,6 +130,7 @@ async function initializeHostedAuth(database: DatabaseSync, config: HostedAuthCo
   await context.checkSchema?.();
   getToken = async (userId, accountId) => {
     const result = await auth.api.getAccessToken({ body: { userId, accountId } });
+    assertConnection(userId, accountId);
     if (!result.accessToken) throw new Error("Clio connection missing");
     return result.accessToken;
   };

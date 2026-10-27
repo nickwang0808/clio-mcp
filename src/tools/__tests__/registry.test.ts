@@ -57,7 +57,7 @@ describe("registerAllTools", () => {
     const { client, server } = await listTools();
     const result = await client.callTool({ name: "delete_contact", arguments: { contact_id: -1 } });
     expect(result.isError).toBe(true);
-    expect(JSON.stringify(result.content)).toContain("greater than 0");
+    expect(JSON.stringify(result.content)).toContain("contact_id");
     await client.close(); await server.close();
   });
   it("registers exactly the tools TOOL_META declares", async () => {

@@ -1,34 +1,19 @@
-# Security policy
+# Security reporting for this fork
 
-## Reporting a vulnerability
+This policy concerns [nickwang0808/clio-mcp](https://github.com/nickwang0808/clio-mcp) and its Canadian hosted service. The upstream maintainer does not operate this fork's hosted service.
 
-Email **office@oktopeak.com** with the subject line `clio-mcp security`. Include the version (`npm ls @oktopeak/clio-mcp`), the transport you run (`stdio` or `http`), steps to reproduce, and what you believe the impact is. Please do not open a public GitHub issue for anything that could expose a firm's Clio data or tokens.
+## Reporting status
 
-- We acknowledge reports within 3 business days.
-- We aim to ship a fix within 30 days of confirming the issue, faster for anything that exposes tokens or client data.
-- We ask for 90 days of coordinated disclosure from the first acknowledgement. We will credit you in the release notes unless you prefer otherwise.
+A dedicated private security contact and response-time commitment have not yet been published for this fork. Do not send reports about this service to the upstream company's support address.
 
-## Supported versions
+If this repository's **Security** tab offers **Report a vulnerability**, use that private reporting channel. Its availability depends on the repository settings. Otherwise, contact the [maintainer](https://github.com/nickwang0808) to request a private channel before sending details; a public issue requesting contact must contain no exploit details or sensitive data.
 
-Only the latest 2.x minor receives security fixes. Upgrade with `npm install -g @oktopeak/clio-mcp@latest` or bump the version in your Claude Desktop config.
+Do not put access tokens, client secrets, database files, client records, or exploitable reproduction details in public issues. Once a private channel is established, include the affected commit, hosted/local mode, client, sanitized reproduction steps, approximate time, and suspected impact. Use fictional data and accounts you are authorized to test.
 
-## What is in scope
+## Review scope and evidence
 
-- The encrypted token file (`~/.clio-mcp/tokens.enc`) and the keychain-held encryption key.
-- The audit log (`~/.clio-mcp/audit.log`): anything that lets client data reach it that the documented redaction rules say should not.
-- The HTTP transport: the `MCP_API_KEY` gate, session isolation between concurrent users, and the OAuth callback.
-- The OAuth flow against Clio (state handling, redirect URIs, token exchange).
-- The `READ_ONLY` gate: any path that lets a write tool run while it is on.
+Relevant areas include hosted token ownership and isolation, OAuth/session lifecycle, local credential storage, tool authorization, and logging. See the [README's security explanation](README.md#security-decisions-and-evidence) and [hosted runbook](hosted/README.md) for implemented controls, tests, and known limitations.
 
-## What is out of scope
+There is no independently audited or certified release claimed here. Existing npm metadata retains the upstream package name; identify this fork by its Git commit. No maintenance window for older fork revisions is promised. Review and test updates before deploying them.
 
-- Clio's own API and web application (report those to Clio).
-- Claude Desktop, Claude.ai, or other MCP clients.
-- Issues that require an attacker to already control the machine or the user account the connector runs under.
-
-## Hardening notes for operators
-
-- Never run the HTTP transport with `MCP_ALLOW_UNAUTHENTICATED=true` on a host other people can reach.
-- Keep `MCP_API_KEY` at 24 characters or more and rotate it when staff change.
-- Set `READ_ONLY=true` if the firm has not decided to let Claude write to Clio yet.
-- The audit log is append-only by convention, not by enforcement. Ship it to storage the firm controls if it has to survive a dispute.
+Clio and AI-client vulnerabilities should also be reported to the operators of those products through their own reporting channels.

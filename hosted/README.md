@@ -91,6 +91,34 @@ run during application startup on the mounted volume, never in a release command
 This follows [Fly's GitHub Actions deployment pattern](https://fly.io/docs/launch/continuous-deployment-with-github-actions/).
 The workflow becomes active only after it is pushed and its settings are supplied.
 
+### Infrastructure inventory and ownership
+
+Infrastructure setup and disaster recovery are manual. CI/CD tests and deploys
+the application server against the provisioned infrastructure; it is not an
+infrastructure reconciliation or data-restoration system. No Terraform or separate
+infrastructure workflow is required for this deployment.
+
+| Resource | Configuration |
+| --- | --- |
+| Fly organization | `personal` |
+| Canadian app | `highvizcto-clio-mcp-ca` |
+| Region | `yyz` (Toronto) |
+| Application Machine | One process, shared CPU, 1 CPU, 512 MB RAM |
+| Persistent volume | `clio_auth`, 1 GB, encrypted, in `yyz`, mounted at `/data` |
+| Database | `/data/auth.sqlite` and its SQLite WAL/SHM sidecars |
+| Volume permissions | UID/GID `1000:1000`; initialized directory mode `700` |
+| Public network | Shared IPv4 and public IPv6; HTTPS on port 443 to application port 8080 |
+| Public origin | `https://highvizcto-clio-mcp-ca.fly.dev` |
+| Health check | `/health`; succeeds after database initialization |
+| Runtime configuration | `hosted/fly.toml`; app/origin supplied by the workflow |
+| Fly secrets | `BETTER_AUTH_SECRET`, `CLIO_CLIENT_ID`, `CLIO_CLIENT_SECRET`, `CLIO_INVITED_IDENTITIES` |
+| GitHub configuration | Variables `FLY_APP`, `HOSTED_ORIGIN`; secret `FLY_API_TOKEN` |
+
+Use the resource names above when rebuilding; volume and Machine IDs can change.
+The existing `highvizcto-clio-mcp` US demo is a separate app and is not a recovery
+target. Fly snapshots are not part of the accepted recovery procedure: this
+service intentionally recovers with fresh authentication storage and reconnection.
+
 | Variable | Meaning |
 | --- | --- |
 | HOSTED_ORIGIN | Exact HTTPS origin, without a trailing slash or path |
@@ -112,8 +140,8 @@ and requested access. `/health` becomes available after initialization.
 
 Use exactly one process/Machine. The runtime image uses UID/GID 1000; its mounted
 database directory and existing database/WAL files must be writable by that user.
-Provisioning Fly volume permissions remains part of staging setup. The example
-Fly configuration deliberately names no existing app and is not named fly.toml.
+Verify mounted-volume permissions on first application startup. Deployment uses
+`hosted/fly.toml`; `hosted/fly.example.toml` is only an illustrative template.
 
 Incoming bodies are limited to 64 KB. Better Auth enforces database-backed rate
 limits. These are currently IP-based; test realistic client/proxy sharing and tune
@@ -169,6 +197,39 @@ store, and restart. Some clients may need to remove and re-add the connector.
 Secrets and invitation configuration must survive outside the lost database.
 Registrations and local history will be lost.
 
+For a wipe or lost volume, recover manually:
+
+1. Stop the affected application Machine before changing its database or mount.
+   If storage is corrupt rather than missing, preserve it separately for inspection;
+   do not automatically erase it following a startup error.
+2. Provide an empty database directory on the surviving healthy volume, or create
+   a replacement 1 GB `clio_auth` volume in `yyz`. Reattach/recreate the single
+   application Machine against the replacement as needed; remove stale mount
+   references. Ensure `/data` is writable by UID/GID 1000 before startup.
+3. If the app itself was deleted, recreate its app name and public IPv4/IPv6
+   allocation, restore the four Fly secrets from their separately managed values,
+   and replace GitHub's app-scoped deployment token. Check the GitHub variables
+   and Clio callback URI if the origin changed. An app deletion loses its secrets
+   too; a volume deletion alone does not.
+4. Redeploy the server using the command below, or rerun the GitHub deployment
+   workflow for the intended `main` commit. Startup creates and migrates the empty
+   database automatically. Verify `/health`, storage permissions, and that only
+   one application Machine is running.
+5. Users reconnect through Clio. Their old MCP tokens, browser sessions, client
+   registrations, and consents no longer exist locally; some AI clients need the
+   connector removed and added again. This loss affects our connection database,
+   not the firm's records stored in Clio.
+
+From the repository root, after the manual infrastructure steps:
+
+```sh
+flyctl deploy --config hosted/fly.toml --app highvizcto-clio-mcp-ca --env HOSTED_ORIGIN=https://highvizcto-clio-mcp-ca.fly.dev --remote-only --ha=false --strategy immediate --yes
+```
+
+Redeploying code alone does not repair a missing volume or recover old credentials.
+Fresh storage plus startup migrations is the intended recovery, with user
+reconnection accepted instead of restoring authentication data.
+
 Never restore an old authentication snapshot directly into a serving application:
 it can revive revoked grants. Inspect snapshots offline; use fresh storage until a
 tested invalidating-restore command exists. Secret rotation currently requires an
@@ -191,8 +252,9 @@ erase a database following a decryption or migration failure.
 - Review remaining concurrency/revocation cases, load and rate limits, response
   sizes, populated schema upgrades, monitoring, and retention before public claims.
 - Configure separate staging secrets, origin, volume permissions, and Clio app
-  distribution/approval requirements. Preserve the US demo. Nothing has been
-  provisioned, deployed, or pushed by this work.
+  distribution/approval requirements. Preserve the US demo. Canadian infrastructure
+  has been provisioned as recorded above; the application has not yet been deployed
+  or pushed by this work.
 
 MIT attribution for reused Oktopeak code remains in the root LICENSE. See
 [the plan](../docs/hosted-clio-canada-implementation-plan.md) and

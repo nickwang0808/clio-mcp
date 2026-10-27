@@ -6,24 +6,13 @@ import { getMigrations } from "better-auth/db/migration";
 import { genericOAuth } from "better-auth/plugins";
 import { toNodeHandler } from "better-auth/node";
 import { clioSimulator, close, listen, type Person } from "./clio-simulator.ts";
-import { createMcpIntegration } from "../../src/mcp-integration.ts";
+import { createTestHostedAuth } from "../../src/auth.ts";
 
-export async function authHarness({ hosted = false } = {}) {
+export async function authHarness({ hosted = false, databasePath = ":memory:", invitations = new Set(["ca:A:11", "ca:A:12", "ca:B:21"]) } = {}) {
   const clio = await clioSimulator();
-  const database = new DatabaseSync(":memory:");
+  let database = new DatabaseSync(databasePath);
   const server = createServer();
   const origin = await listen(server);
-  let getToken!: (userId: string, accountId: string) => Promise<string>;
-  const integration = createMcpIntegration({ origin, database, async clioRequest(connection, method, path, data) {
-    const token = await getToken(connection.userId, connection.id);
-    const response = await fetch(`${clio.origin}/api/v4${path}`, {
-      method,
-      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-      ...(data ? { body: JSON.stringify({ data }) } : {}),
-    });
-    if (!response.ok) throw new Error("Clio request failed");
-    return response.json();
-  } });
   const options = {
     baseURL: origin,
     database,
@@ -51,17 +40,16 @@ export async function authHarness({ hosted = false } = {}) {
         if (!data?.id || !data?.account?.id || !data?.email) return null;
         return { id: `ca:${data.account.id}:${data.id}`, name: data.name, email: data.email, emailVerified: false };
       },
-    }] }), ...(hosted ? integration.plugins : [])],
+    }] })],
   } satisfies BetterAuthOptions;
-  await (await getMigrations(options)).runMigrations();
-  const auth = betterAuth(options);
+  if (!hosted) await (await getMigrations(options)).runMigrations();
+  const createHost = () => createTestHostedAuth(database, {
+    origin, secret: options.secret, clientId: "test-clio-client", clientSecret: "test-clio-secret",
+    invitations,
+  }, clio.origin);
+  let auth = hosted ? await createHost() : betterAuth(options);
   await auth.$context;
-  getToken = async (userId, accountId) => {
-    const result = await auth.api.getAccessToken({ body: { userId, accountId } });
-    if (!result.accessToken) throw new Error("Clio connection missing");
-    return result.accessToken;
-  };
-  server.on("request", toNodeHandler(auth));
+  server.on("request", (req, res) => { void toNodeHandler(auth)(req, res); });
 
   async function login(person: Person) {
     const cookies = new Map<string, string>();
@@ -97,7 +85,13 @@ export async function authHarness({ hosted = false } = {}) {
     assert.ok(account);
     return { account, headers };
   }
-  return { auth, database, origin, clio, login, async close() {
+  return { get auth() { return auth; }, get database() { return database; }, origin, clio, login,
+    async restart(path = databasePath) {
+      if (!hosted) throw new Error("Restart is for the hosted implementation");
+      database.close();
+      database = new DatabaseSync(path);
+      auth = await createHost();
+    }, async close() {
     await close(server);
     await clio.close();
     database.close();

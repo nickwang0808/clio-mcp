@@ -1,0 +1,5 @@
+[mcp_servers.clio_canada]
+url = "https://highvizcto-clio-mcp-ca.fly.dev/api/auth/mcp"
+scopes = ["clio:read", "clio:write", "offline_access"]
+startup_timeout_sec = 30
+tool_timeout_sec = 60

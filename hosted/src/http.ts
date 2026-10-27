@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomBytes } from "node:crypto";
+import { isIP } from "node:net";
 import { getRequest, setResponse } from "better-call/node";
 import { verifyOAuthQueryParams } from "@better-auth/oauth-provider";
 import type { createHostedAuth } from "./auth.ts";
@@ -9,7 +10,7 @@ function escape(value: string) {
   return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
 }
 
-export function createHostedHttpHandler(auth: Auth, origin: string) {
+export function createHostedHttpHandler(auth: Auth, origin: string, trustFlyProxy = false) {
   return async (req: IncomingMessage, res: ServerResponse) => {
     try {
       const url = new URL(req.url ?? "/", origin);
@@ -19,7 +20,13 @@ export function createHostedHttpHandler(auth: Auth, origin: string) {
         if (Number(req.headers["content-length"] ?? 0) > 64 * 1024) {
           res.writeHead(413); res.end("Request is too large"); req.resume(); return;
         }
-        await setResponse(res, await auth.handler(getRequest({ request: req, base: origin, bodySizeLimit: 64 * 1024 }))); return;
+        const request = getRequest({ request: req, base: origin, bodySizeLimit: 64 * 1024 });
+        const forwarded = req.headers["fly-client-ip"];
+        const ip = trustFlyProxy && typeof forwarded === "string" && isIP(forwarded) ? forwarded : req.socket.remoteAddress;
+        // Overwrite caller input. Only the explicitly configured Fly edge may supply this IP.
+        request.headers.delete("x-clio-client-ip");
+        if (ip) request.headers.set("x-clio-client-ip", ip);
+        await setResponse(res, await auth.handler(request)); return;
       }
       if (req.method !== "GET") { res.writeHead(405); res.end(); return; }
       const nonce = randomBytes(18).toString("base64");

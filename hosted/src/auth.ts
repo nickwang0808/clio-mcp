@@ -88,6 +88,7 @@ async function initializeHostedAuth(database: DatabaseSync, config: HostedAuthCo
   } });
   const options = {
     database, baseURL: config.origin, secret: config.secret,
+    advanced: { ipAddress: { ipAddressHeaders: ["x-clio-client-ip"] } },
     rateLimit: { enabled: true, storage: "database", window: 60, max: 100, customRules: { "/mcp": { window: 60, max: 300 } } },
     emailAndPassword: { enabled: false },
     user: { deleteUser: { enabled: true } },

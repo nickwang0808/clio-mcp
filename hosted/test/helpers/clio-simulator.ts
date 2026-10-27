@@ -28,6 +28,7 @@ export async function clioSimulator() {
   const codes = new Map<string, { person: Person; redirect: string; challenge: string }>();
   const credentials = new Map<string, Person>();
   const refreshCredentials = new Map<string, Person>();
+  const matters = { A: "A confidential fixture", B: "B confidential fixture" };
   let refreshGate: { entered(): void; release: Promise<void> } | undefined;
   const requests: { person: Person; token: string; path: string }[] = [];
   const server = createServer(async (req, res) => {
@@ -93,7 +94,13 @@ export async function clioSimulator() {
       if (url.pathname === "/api/v4/users/who_am_i.json") return json(200, { data: people[person] });
       if (url.pathname === "/api/v4/matters/1.json") {
         if (person === "bob") return json(403, { error: "forbidden" });
-        return json(200, { data: { id: 1, description: `${people[person].account.id} confidential fixture` } });
+        const firm = people[person].account.id;
+        if (req.method === "PATCH") {
+          const chunks: Buffer[] = [];
+          for await (const chunk of req) chunks.push(Buffer.from(chunk));
+          matters[firm] = JSON.parse(Buffer.concat(chunks).toString()).data.description;
+        }
+        return json(200, { data: { id: 1, description: matters[firm] } });
       }
       return json(404, { error: "not_found" });
     } catch {

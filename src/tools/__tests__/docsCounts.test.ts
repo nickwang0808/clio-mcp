@@ -21,19 +21,20 @@ import { TOOL_META, WRITE_TOOLS } from "../index.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const readme = fs.readFileSync(path.join(repoRoot, "README.md"), "utf8");
+const localGuide = fs.readFileSync(path.join(repoRoot, "docs/local-deployment.md"), "utf8");
 const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"));
 
 describe("README tool counts", () => {
-  const sections = [...readme.matchAll(/^### .+ \((\d+) tools?\)$/gm)].map((m) => Number(m[1]));
-
-  it("finds the per-section counts at all", () => {
-    expect(sections.length).toBeGreaterThan(10);
+  it("states the local tool total in the deployment comparison", () => {
+    const totals = readme.match(/\| Tool total with writes enabled \| (\d+) tools \| (\d+) tools \|/);
+    expect(totals, "README must distinguish hosted and local totals").not.toBeNull();
+    expect(Number(totals![2])).toBe(Object.keys(TOOL_META).length);
   });
 
-  it("sums to the number of tools the registry actually exposes", () => {
-    const total = sections.reduce((a, b) => a + b, 0);
-    expect(total, `README sections sum to ${total}, registry has ${Object.keys(TOOL_META).length}`)
-      .toBe(Object.keys(TOOL_META).length);
+  it("states the same total in the local setup guide", () => {
+    const total = localGuide.match(/local server has (\d+) tools/);
+    expect(total).not.toBeNull();
+    expect(Number(total![1])).toBe(Object.keys(TOOL_META).length);
   });
 
   it("states the same total in the npm package description", () => {
@@ -43,11 +44,8 @@ describe("README tool counts", () => {
   });
 
   it("describes the read-only mode with the real number of write tools", () => {
-    const written = readme.match(/never registers its ([a-z]+) write tools/);
+    const written = readme.match(/removes all \*\*(\d+) Clio write tools\*\*/);
     expect(written, "README no longer describes the read-only write-tool count").not.toBeNull();
-    const words: Record<string, number> = {
-      seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, eighteen: 18,
-    };
-    expect(words[written![1]], `README says "${written![1]}" write tools`).toBe(WRITE_TOOLS.size);
+    expect(Number(written![1])).toBe(WRITE_TOOLS.size);
   });
 });

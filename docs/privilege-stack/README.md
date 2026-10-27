@@ -188,7 +188,7 @@ Every Clio MCP tool call writes one JSON line to `~/.clio-mcp/audit.log`. The co
 npm install -g @oktopeak/clio-mcp@latest
 ```
 
-Pin to a specific version in production: `@oktopeak/clio-mcp@1.0.1`. Audit the diff before upgrading. See the [Trust Model](../../README.md#trust-model) section in the main README for supply-chain guidance.
+For this fork, follow the [source-based local setup guide](../local-deployment.md) and record the installed Git commit. Review changes before upgrading. See the [security decisions and evidence](../../README.md#security-decisions-and-evidence) in the main README for the current trust model.
 
 ---
 

@@ -1,5 +1,10 @@
 # Hosted Clio Canada
 
+For first-time setup, use the [cloud deployment guide](../docs/cloud-deployment.md).
+The [main README](../README.md) compares hosted, self-hosted cloud, and
+[local single-user setup](../docs/local-deployment.md). This file is the technical
+implementation and operations runbook.
+
 Deployed to the Canadian Fly app on 2026-10-27 through GitHub Actions. Canadian
 Clio login and contact/matter/note CRUD passed through Codex's MCP client on that
 date; multi-firm live acceptance and ChatGPT retesting remain pending.

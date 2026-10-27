@@ -35,5 +35,11 @@ coverage/
 
 tokens.enc
 
+# Hosted credential database and SQLite sidecars
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+
 .claude/
 CLAUDE.md

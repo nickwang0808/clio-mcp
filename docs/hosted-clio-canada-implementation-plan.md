@@ -2,6 +2,13 @@
 
 Prepared: 2026-10-26. Status: ready to begin offline implementation; Better Auth adoption remains conditional on Phase 1.
 
+Implementation update: the hosted application, shared-tool SDK v2 adapter, local
+Clio simulator, browser consent flow, SQLite startup, offline container tests, and
+runtime image are implemented. See [the runbook](../hosted/README.md) for verified
+behavior and outstanding acceptance work. The original self-hosted transports
+retain SDK v1; the hosted service runs SDK v2. The original phase checklist below
+is not a claim that every public-launch requirement has passed.
+
 Subsequent user decisions: target read-write capability; excluding deletion is
 under consideration, not yet an agreed complete tool policy. Read-only scope
 below is superseded by that direction. The demonstrated same-user upstream

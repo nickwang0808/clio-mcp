@@ -29,6 +29,8 @@ export async function clioSimulator() {
   const credentials = new Map<string, Person>();
   const refreshCredentials = new Map<string, Person>();
   const matters = { A: "A confidential fixture", B: "B confidential fixture" };
+  const profiles = new Map<Person, unknown>();
+  let dropWriteResponse = false;
   let refreshGate: { entered(): void; release: Promise<void> } | undefined;
   const requests: { person: Person; token: string; path: string }[] = [];
   const server = createServer(async (req, res) => {
@@ -91,7 +93,7 @@ export async function clioSimulator() {
       const person = credentials.get(token);
       if (!person) return json(401, { error: "unauthorized" });
       requests.push({ person, token, path: url.pathname });
-      if (url.pathname === "/api/v4/users/who_am_i.json") return json(200, { data: people[person] });
+      if (url.pathname === "/api/v4/users/who_am_i.json") return json(200, { data: profiles.has(person) ? profiles.get(person) : people[person] });
       if (url.pathname === "/api/v4/matters/1.json") {
         if (person === "bob") return json(403, { error: "forbidden" });
         const firm = people[person].account.id;
@@ -99,6 +101,7 @@ export async function clioSimulator() {
           const chunks: Buffer[] = [];
           for await (const chunk of req) chunks.push(Buffer.from(chunk));
           matters[firm] = JSON.parse(Buffer.concat(chunks).toString()).data.description;
+          if (dropWriteResponse) { dropWriteResponse = false; res.destroy(); return; }
         }
         return json(200, { data: { id: 1, description: matters[firm] } });
       }
@@ -109,7 +112,10 @@ export async function clioSimulator() {
     }
   });
   const origin = await listen(server);
-  return { origin, requests, close: () => close(server), pauseNextRefresh() {
+  return { origin, requests, close: () => close(server),
+    setProfile(person: Person, profile: unknown) { profiles.set(person, profile); },
+    dropNextWriteResponse() { dropWriteResponse = true; },
+    pauseNextRefresh() {
     let entered!: () => void;
     let release!: () => void;
     const started = new Promise<void>(resolve => { entered = resolve; });

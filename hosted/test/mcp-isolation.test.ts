@@ -92,3 +92,27 @@ test("one-use codes, client-bound refresh, and token revocation use library enfo
     assert.equal(replay.status, 400);
   } finally { await h.close(); }
 });
+
+test("a write applied by Clio with a lost response is not automatically replayed", async () => {
+  const h = await authHarness({ hosted: true });
+  try {
+    const alice = await connectMcp(h, "alice");
+    const before = h.clio.requests.length;
+    h.clio.dropNextWriteResponse();
+    const result = await alice.rpc("tools/call", { name: "update_matter", arguments: { matter_id: 1, description: "Applied once" } });
+    assert.equal(result.body.result.isError, true);
+    assert.match(result.body.result.content[0].text, /Check its outcome/);
+    assert.equal(h.clio.requests.length - before, 1);
+    const read = await alice.rpc("tools/call", { name: "get_matter", arguments: { matter_id: 1 } });
+    assert.equal(JSON.parse(read.body.result.content[0].text).description, "Applied once");
+  } finally { await h.close(); }
+});
+
+test("removing an account alone rejects grants even if a replacement row belongs to the same user", async () => {
+  const h = await authHarness({ hosted: true });
+  try {
+    const alice = await connectMcp(h, "alice");
+    h.database.prepare("UPDATE account SET id = ? WHERE id = ?").run("replacement-row", alice.login.account.id);
+    assert.equal((await alice.rpc("tools/list", {})).status, 401);
+  } finally { await h.close(); }
+});

@@ -7,6 +7,7 @@ import { DatabaseSync } from "node:sqlite";
 import { createHostedAuth, createTestHostedAuth } from "../src/auth.ts";
 import { authHarness } from "./helpers/auth-harness.ts";
 import { connectMcp } from "./helpers/mcp-client.ts";
+import { people } from "./helpers/clio-simulator.ts";
 
 test("file-backed SQLite preserves grants across restart and fresh storage rejects old credentials", async () => {
   const directory = await mkdtemp(join(tmpdir(), "clio-hosted-"));
@@ -61,4 +62,21 @@ test("startup rejects unknown schema versions and production rejects insecure or
     await assert.rejects(createTestHostedAuth(database, config, "http://127.0.0.1:3001"), /Unsupported hosted database schema/);
     assert.equal(database.prepare("PRAGMA user_version").get()!.user_version, 99);
   } finally { database.close(); }
+});
+
+test("malformed identities fail closed and matching email cannot merge distinct Clio identities", async () => {
+  const h = await authHarness({ hosted: true });
+  try {
+    for (const profile of [{ ...people.carol, id: undefined }, { ...people.carol, account: {} }, { ...people.carol, id: {} }]) {
+      h.clio.setProfile("carol", profile);
+      await assert.rejects(h.login("carol"));
+      assert.equal(h.database.prepare('SELECT count(*) AS n FROM "user"').get()!.n, 0);
+    }
+    const alice = await h.login("alice");
+    h.clio.setProfile("carol", { ...people.carol, email: people.alice.email });
+    await assert.rejects(h.login("carol"));
+    assert.equal(h.database.prepare('SELECT count(*) AS n FROM "user"').get()!.n, 1);
+    const account = h.database.prepare("SELECT accountId FROM account WHERE userId = ?").get(alice.account.userId)!;
+    assert.equal(account.accountId, "ca:A:11");
+  } finally { await h.close(); }
 });

@@ -1,7 +1,9 @@
 # Hosted Clio Canada
 
-Deployed to the Canadian Fly app on 2026-10-27 through GitHub Actions; live Clio
-login and data-operation acceptance are still pending. Clio is the only login provider. Better Auth handles browser sessions
+Deployed to the Canadian Fly app on 2026-10-27 through GitHub Actions. Canadian
+Clio login and contact/matter/note CRUD passed through Codex's MCP client on that
+date; multi-firm live acceptance and ChatGPT retesting remain pending.
+Clio is the only login provider. Better Auth handles browser sessions
 and downstream OAuth; the official MCP SDK v2 serves the existing Clio tools.
 
 Signup is open to Canadian Clio users; no invitation list or pre-collected user
@@ -43,13 +45,35 @@ docker run --rm --network none clio-hosted-test
 docker build --target runtime -f hosted/Dockerfile -t clio-hosted-runtime .
 ```
 
-Completed locally: root build, 594 shared tests, 24 hosted tests, hosted type
+Completed locally: root build, 597 shared tests, 24 hosted tests, hosted type
 checks, Linux suites with networking disabled, package secret scan, and runtime
 startup/health with synthetic configuration. Three original `GATE FAILURE`
 tests reproduce known limitations; passing them does not mean those limitations
 are fixed. Both dependency audits reported no known vulnerabilities after updates.
 
 ## Configuration and startup
+
+### Codex connection and live acceptance
+
+The repository's `.codex/config.toml` configures `clio_canada` with read/write and
+offline access. Codex loads project configuration only for trusted projects.
+Authenticate from this repository with `codex mcp login clio_canada`; credentials
+are kept by Codex, not in the tracked configuration. A running client may need to
+reload its MCP connections. See [OpenAI's MCP documentation](https://learn.chatgpt.com/docs/extend/mcp).
+
+On 2026-10-27, Codex OAuth login succeeded and discovered all 40 tools. The live
+investigation reproduced HTTP 400 from `list_contacts`: Clio rejected
+`custom_field_values{id,value,custom_field{id,name}}`. A minimal projection with
+the same credentials returned 200. Commit `2fd427c` removes the unsupported
+second nesting level and adds regressions for contact list/create/update.
+
+After deployment of `04c3f26`, a direct Codex app-server MCP test passed contact,
+matter, and note create/read/update/delete against Canadian Clio. It used only
+new records labeled `MCP CRUD TEST`, then deleted those three records and verified
+their absence. No existing records were modified. The authenticated connection
+also survived that deployment. This verifies one live user's CRUD flow, not
+multi-firm live isolation or every registered tool. ChatGPT should retry the
+previously failing contact operations against the corrected deployment.
 
 ### Automatic Fly deployment
 
@@ -249,9 +273,9 @@ erase a database following a decryption or migration failure.
 - Confirm Canadian identity fields (`id,name,email,account{id}`), app permissions,
   PKCE support, and live refresh/revocation behavior. Simulation does not verify
   Clio's actual contract.
-- Verify the intended AI client's registration, scopes, browser, and MCP protocol.
-  Automated HTTP tests exercise 2025-era stateless compatibility through SDK v2;
-  live client compatibility has not been demonstrated.
+- Verify ChatGPT's registration, scopes, browser, and MCP protocol. Codex OAuth,
+  tool discovery and live CRUD have passed; automated HTTP tests also exercise
+  2025-era stateless compatibility through SDK v2.
 - Implement agent-friendly upload and tenant-safe audit export in issues #3 and #2
   before exposing those tools. The original server-file upload cannot be exposed
   as-is on a shared service.
@@ -261,8 +285,8 @@ erase a database following a decryption or migration failure.
   sizes, populated schema upgrades, monitoring, and retention before public claims.
 - Configure separate staging secrets, origin, volume permissions, and Clio app
   distribution/approval requirements. Preserve the US demo. Canadian infrastructure
-  and the application are deployed as recorded above. Live Clio and actual AI-client
-  acceptance remain outstanding.
+  and the application are deployed as recorded above. Multi-firm live acceptance
+  and ChatGPT retesting remain outstanding.
 
 MIT attribution for reused Oktopeak code remains in the root LICENSE. See
 [the plan](../docs/hosted-clio-canada-implementation-plan.md) and

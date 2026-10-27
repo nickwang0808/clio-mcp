@@ -48,11 +48,18 @@ are fixed. Both dependency audits reported no known vulnerabilities after update
 
 ### Automatic Fly deployment
 
-`.github/workflows/fly-deploy.yml` deploys pushes to **master**, after the reusable
+`.github/workflows/fly-deploy.yml` deploys pushes to **main**, after the reusable
 offline acceptance workflow passes (shared and hosted tests, type checking during
-the image build, and the package secret scan). The repository currently uses
-`main`; pushing to `main` does not deploy. Change the deployment trigger if `main`
-is the intended release branch; no branch rename is performed automatically.
+the image build, and the package secret scan). `main` is the repository's release
+branch.
+
+Configured target: `highvizcto-clio-mcp-ca` at
+`https://highvizcto-clio-mcp-ca.fly.dev`, separate from the existing US demo.
+GitHub repository variables and `FLY_API_TOKEN` were configured on 2026-10-27;
+the app-scoped deployment token expires after one year and must be rotated before
+2027-10-27. A generated `BETTER_AUTH_SECRET` is staged on the Canadian Fly app.
+Canadian Clio credentials, invited identities, and volume/network provisioning
+are still required before the first successful deployment.
 
 One-time setup in this repository's GitHub Actions settings (repository settings
 or the `production` environment):

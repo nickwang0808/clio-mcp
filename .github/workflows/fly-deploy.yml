@@ -2,7 +2,7 @@ name: Deploy hosted Clio to Fly
 
 on:
   push:
-    branches: [master]
+    branches: [main]
 
 permissions:
   contents: read

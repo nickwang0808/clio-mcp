@@ -15,26 +15,26 @@ test("library OAuth grants route MCP reads and writes to the consenting user's C
       assert.notEqual(stored.token, client.tokens.access_token, "Store only bearer-token hashes");
     }
     const calls = Array.from({ length: 12 }, (_, i) => i % 2 ? carol : alice);
-    const reads = await Promise.all(calls.map(client => client.rpc("tools/call", { name: "get_matter", arguments: { id: "1" } })));
+    const reads = await Promise.all(calls.map(client => client.rpc("tools/call", { name: "get_matter", arguments: { matter_id: 1 } })));
     reads.forEach((read, i) => {
       assert.equal(read.status, 200, JSON.stringify(read.body));
       assert.equal(read.body.result.isError, undefined, JSON.stringify(read.body));
       assert.match(read.body.result.content[0].text, i % 2 ? /B confidential fixture/ : /A confidential fixture/);
     });
-    const restricted = await bob.rpc("tools/call", { name: "get_matter", arguments: { id: "1" } });
+    const restricted = await bob.rpc("tools/call", { name: "get_matter", arguments: { matter_id: 1 } });
     assert.equal(restricted.body.result.isError, true);
     assert.equal(h.clio.requests.at(-1)?.person, "bob");
     await Promise.all([alice, carol].map((client, i) => client.rpc("tools/call", {
-      name: "update_matter", arguments: { id: "1", description: i ? "Carol's edit" : "Alice's edit" },
+      name: "update_matter", arguments: { matter_id: 1, description: i ? "Carol's edit" : "Alice's edit" },
     }).then(result => assert.notEqual(result.body.result.isError, true))));
     for (const [client, expected] of [[alice, "Alice's edit"], [carol, "Carol's edit"]] as const) {
-      const read = await client.rpc("tools/call", { name: "get_matter", arguments: { id: "1" } });
-      assert.equal(JSON.parse(read.body.result.content[0].text).data.description, expected);
+      const read = await client.rpc("tools/call", { name: "get_matter", arguments: { matter_id: 1 } });
+      assert.equal(JSON.parse(read.body.result.content[0].text).description, expected);
     }
-    const deniedWrite = await bob.rpc("tools/call", { name: "update_matter", arguments: { id: "1", description: "Unauthorized" } });
+    const deniedWrite = await bob.rpc("tools/call", { name: "update_matter", arguments: { matter_id: 1, description: "Unauthorized" } });
     assert.equal(deniedWrite.body.result.isError, true);
     const before = h.clio.requests.length;
-    const injected = await alice.rpc("tools/call", { name: "get_matter", arguments: { id: "1", accountId: carol.login.account.id } });
+    const injected = await alice.rpc("tools/call", { name: "get_matter", arguments: { matter_id: 1, accountId: carol.login.account.id } });
     assert.ok(injected.body.error || injected.body.result?.isError);
     assert.equal(h.clio.requests.length, before);
   } finally { await h.close(); }
@@ -45,9 +45,11 @@ test("a read-only grant cannot invoke a write, and refresh tokens are not MCP ac
   try {
     const alice = await connectMcp(h, "alice", "clio:read offline_access");
     const tools = await alice.rpc("tools/list", {});
-    assert.deepEqual(tools.body.result.tools.map((tool: { name: string }) => tool.name), ["get_matter"]);
+    const names = tools.body.result.tools.map((tool: { name: string }) => tool.name);
+    assert.ok(names.includes("get_matter") && names.includes("list_contacts"));
+    assert.ok(!names.includes("update_matter") && !names.includes("create_contact"));
     const before = h.clio.requests.length;
-    const write = await alice.rpc("tools/call", { name: "update_matter", arguments: { id: "1", description: "Denied" } });
+    const write = await alice.rpc("tools/call", { name: "update_matter", arguments: { matter_id: 1, description: "Denied" } });
     assert.ok(write.body.error || write.body.result?.isError);
     assert.equal(h.clio.requests.length, before);
     assert.equal((await alice.rpc("tools/list", {}, alice.tokens.refresh_token)).status, 401);

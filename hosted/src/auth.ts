@@ -3,6 +3,8 @@ import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { genericOAuth } from "better-auth/plugins";
 import { getMigrations } from "better-auth/db/migration";
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
+import { ClioApiError } from "../../build/lib.js";
 import { createMcpIntegration } from "./mcp-integration.ts";
 
 export const CANADA_ENDPOINTS = {
@@ -22,6 +24,7 @@ export interface HostedAuthConfig {
   clientSecret: string;
   /** Verified Clio identities, formatted ca:firm:user. No email-domain authorization. */
   invitations: ReadonlySet<string>;
+  audit?: (event: { userId: string; connectionId: string; requestId: string; tool: string; outcome: string }) => void;
 }
 
 /** Explicit test seam; production construction always selects Canadian endpoints. */
@@ -47,16 +50,41 @@ async function initializeHostedAuth(database: DatabaseSync, config: HostedAuthCo
     throw new Error("Invalid hosted configuration");
   }
   let getToken!: (userId: string, accountId: string) => Promise<string>;
-  const integration = createMcpIntegration({ origin: config.origin, database, async clioRequest(connection, method, path, data) {
-    const token = await getToken(connection.userId, connection.id);
-    // Exactly one attempt, especially for writes whose result may be uncertain.
-    const response = await fetch(`${endpoints.api}${path}`, {
-      method, redirect: "error", signal: AbortSignal.timeout(15_000),
-      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-      ...(data === undefined ? {} : { body: JSON.stringify({ data }) }),
-    });
-    if (!response.ok) throw new Error("Clio request failed");
-    return response.json();
+  function assertConnection(userId: string, id: string) {
+    if (!database.prepare("SELECT id FROM account WHERE id = ? AND userId = ? AND providerId = 'clio-ca'").get(id, userId)) {
+      throw new Error("Clio connection is disconnected");
+    }
+  }
+  const integration = createMcpIntegration({ origin: config.origin, database, session(connection) {
+    const requestId = randomUUID();
+    return {
+      sessionId: connection.id, userId: connection.userId, requestId, region: "ca",
+      getAccessToken: async () => { assertConnection(connection.userId, connection.id); return getToken(connection.userId, connection.id); },
+      getTokens: async () => null,
+      storeTokens: async () => { throw new Error("Hosted credentials are managed by the login provider"); },
+      clearTokens: async () => { throw new Error("Use the hosted disconnect flow"); },
+      appendAudit: async entry => {
+        (config.audit ?? (event => console.info(JSON.stringify(event))))({
+          userId: connection.userId, connectionId: connection.id, requestId, tool: entry.tool, outcome: entry.outcome,
+        });
+      },
+      fetchClio: async (value, init) => {
+        assertConnection(connection.userId, connection.id);
+        const url = new URL(value);
+        if (url.origin !== "https://ca.app.clio.com" || !url.pathname.startsWith("/api/v4/")) throw new Error("Invalid Clio endpoint");
+        const method = init.method ?? "GET";
+        if (!["GET", "POST", "PATCH", "PUT"].includes(method)) throw new Error("Clio operation is disabled");
+        let response: Response;
+        try {
+          // Exactly one HTTP attempt; never replay a write whose outcome is uncertain.
+          response = await fetch(`${endpoints.api}${url.pathname.slice("/api/v4".length)}${url.search}`, {
+            ...init, method, redirect: "error", signal: AbortSignal.timeout(15_000),
+          });
+        } catch { throw new Error("Clio request did not complete. Check its outcome before retrying a write."); }
+        if (!response.ok) throw new ClioApiError(response.status, `Clio request failed (${response.status}). Check connection and permissions.`);
+        return response;
+      },
+    };
   } });
   const options = {
     database, baseURL: config.origin, secret: config.secret,

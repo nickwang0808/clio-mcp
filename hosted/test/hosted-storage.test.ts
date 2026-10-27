@@ -38,7 +38,7 @@ test("browser routes cannot return upstream tokens; internal retrieval still ser
       });
       assert.equal(result.status, 404, route);
     }
-    const read = await alice.rpc("tools/call", { name: "get_matter", arguments: { id: "1" } });
+    const read = await alice.rpc("tools/call", { name: "get_matter", arguments: { matter_id: 1 } });
     assert.notEqual(read.body.result.isError, true);
   } finally { await h.close(); }
 });

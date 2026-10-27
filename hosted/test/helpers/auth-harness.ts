@@ -45,7 +45,7 @@ export async function authHarness({ hosted = false, databasePath = ":memory:", i
   if (!hosted) await (await getMigrations(options)).runMigrations();
   const createHost = () => createTestHostedAuth(database, {
     origin, secret: options.secret, clientId: "test-clio-client", clientSecret: "test-clio-secret",
-    invitations,
+    invitations, audit: () => {},
   }, clio.origin);
   let auth = hosted ? await createHost() : betterAuth(options);
   await auth.$context;

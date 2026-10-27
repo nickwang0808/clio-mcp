@@ -4,14 +4,15 @@ import { APIError, createAuthEndpoint } from "better-auth/api";
 import { mcp, type McpOptions } from "@better-auth/mcp";
 import { createResourceServerChallenge, getOAuthProviderApi } from "@better-auth/oauth-provider";
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
-import { z } from "zod";
+import type { SessionContext } from "../../build/lib.js";
+import { registerHostedTools } from "./tools.ts";
 
-interface Connection { id: string; userId: string }
+export interface Connection { id: string; userId: string }
 export interface McpIntegrationOptions {
   origin: string;
   database: DatabaseSync;
   /** Trusted host function; never receives user-selected credentials. */
-  clioRequest(connection: Connection, method: "GET" | "PATCH", path: string, data?: unknown): Promise<unknown>;
+  session(connection: Connection): SessionContext;
 }
 
 /** Small resource adapter: the library owns OAuth; SQLite owns connection identity. */
@@ -73,27 +74,7 @@ export function createMcpIntegration(options: McpIntegrationOptions) {
     }
     const handler = createMcpHandler(() => {
       const server = new McpServer({ name: "hosted-clio-prototype", version: "0.0.0" });
-      async function call(method: "GET" | "PATCH", id: string, data?: unknown) {
-        // Recheck at dispatch so an account removed after HTTP authorization cannot be selected.
-        connectionFor(connection.userId, connection.id);
-        try {
-          const result = await options.clioRequest(connection, method, `/matters/${id}.json`, data);
-          return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
-        } catch {
-          // Do not expose upstream payloads, tokens, or internal error details.
-          return { isError: true, content: [{ type: "text" as const, text: "Clio request failed; check connection and permissions. Writes were not retried." }] };
-        }
-      }
-      if (scopes.has("clio:read")) server.registerTool("get_matter", {
-        description: "Read a matter with your own Clio permissions",
-        inputSchema: z.object({ id: z.string().regex(/^[1-9][0-9]*$/) }).strict(),
-        annotations: { readOnlyHint: true },
-      }, ({ id }) => call("GET", id));
-      if (scopes.has("clio:write")) server.registerTool("update_matter", {
-        description: "Update a matter description with your own Clio permissions",
-        inputSchema: z.object({ id: z.string().regex(/^[1-9][0-9]*$/), description: z.string().min(1).max(2000) }).strict(),
-        annotations: { readOnlyHint: false, destructiveHint: true },
-      }, ({ id, description }) => call("PATCH", id, { description }));
+      registerHostedTools(server, scopes, () => options.session(connectionFor(connection.userId, connection.id)));
       return server;
     }, { legacy: "stateless", maxRequestBodySize: 64 * 1024 });
     return handler.fetch(ctx.request!);

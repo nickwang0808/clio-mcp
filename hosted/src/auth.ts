@@ -88,6 +88,7 @@ async function initializeHostedAuth(database: DatabaseSync, config: HostedAuthCo
   } });
   const options = {
     database, baseURL: config.origin, secret: config.secret,
+    rateLimit: { enabled: true, storage: "database", window: 60, max: 100, customRules: { "/mcp": { window: 60, max: 300 } } },
     emailAndPassword: { enabled: false },
     user: { deleteUser: { enabled: true } },
     disabledPaths: ["/get-access-token", "/refresh-token", "/account-info", "/link-social", "/unlink-account", "/change-email", "/update-user", "/oauth2/create-client"],

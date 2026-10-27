@@ -71,6 +71,8 @@ test("malformed identities fail closed and matching email cannot merge distinct 
       h.clio.setProfile("carol", profile);
       await assert.rejects(h.login("carol"));
       assert.equal(h.database.prepare('SELECT count(*) AS n FROM "user"').get()!.n, 0);
+      // Each malformed-profile case must reach identity validation, not a login rate limit.
+      h.database.prepare("DELETE FROM rateLimit").run();
     }
     const alice = await h.login("alice");
     h.clio.setProfile("carol", { ...people.carol, email: people.alice.email });

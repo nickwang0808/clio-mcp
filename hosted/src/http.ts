@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomBytes } from "node:crypto";
-import { toNodeHandler } from "better-auth/node";
+import { getRequest, setResponse } from "better-call/node";
 import { verifyOAuthQueryParams } from "@better-auth/oauth-provider";
 import type { createHostedAuth } from "./auth.ts";
 
@@ -10,14 +10,16 @@ function escape(value: string) {
 }
 
 export function createHostedHttpHandler(auth: Auth, origin: string) {
-  const authHandler = toNodeHandler(auth);
   return async (req: IncomingMessage, res: ServerResponse) => {
     try {
       const url = new URL(req.url ?? "/", origin);
-      if (req.headers.host !== new URL(origin).host) { res.writeHead(400); res.end("Invalid host"); return; }
       if (url.pathname === "/health") { res.writeHead(200); res.end("ok"); return; }
+      if (req.headers.host !== new URL(origin).host) { res.writeHead(400); res.end("Invalid host"); return; }
       if (url.pathname.startsWith("/api/auth/") || url.pathname.startsWith("/.well-known/")) {
-        await authHandler(req, res); return;
+        if (Number(req.headers["content-length"] ?? 0) > 64 * 1024) {
+          res.writeHead(413); res.end("Request is too large"); req.resume(); return;
+        }
+        await setResponse(res, await auth.handler(getRequest({ request: req, base: origin, bodySizeLimit: 64 * 1024 }))); return;
       }
       if (req.method !== "GET") { res.writeHead(405); res.end(); return; }
       const nonce = randomBytes(18).toString("base64");

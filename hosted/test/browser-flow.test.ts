@@ -35,3 +35,23 @@ test("first-time browser authorization resumes after Clio login and renders veri
     assert.equal((await discovery.json()).resource, `${h.origin}/api/auth/mcp`);
   } finally { await h.close(); }
 });
+
+test("HTTP limits reject oversized bodies and repeated login attempts", async () => {
+  const h = await authHarness({ hosted: true });
+  try {
+    const oversized = await fetch(`${h.origin}/api/auth/sign-in/social`, {
+      method: "POST", headers: { "content-type": "application/json", origin: h.origin },
+      body: JSON.stringify({ provider: "clio-ca", padding: "x".repeat(65 * 1024) }),
+    });
+    assert.equal(oversized.status, 413);
+    const statuses: number[] = [];
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const response = await fetch(`${h.origin}/api/auth/sign-in/social`, {
+        method: "POST", headers: { "content-type": "application/json", origin: h.origin },
+        body: JSON.stringify({ provider: "clio-ca", callbackURL: `${h.origin}/connected` }),
+      });
+      statuses.push(response.status);
+    }
+    assert.deepEqual(statuses, [200, 200, 200, 429]);
+  } finally { await h.close(); }
+});

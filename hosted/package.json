@@ -17,6 +17,7 @@
     "@better-auth/oauth-provider": "1.7.14",
     "@modelcontextprotocol/server": "2.4.0",
     "better-auth": "1.7.14",
+    "better-call": "1.4.4",
     "zod": "4.6.7"
   },
   "devDependencies": {

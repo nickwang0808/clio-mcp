@@ -19,7 +19,7 @@ const contactFields = {
   addresses: z.array(address).max(200).optional(), custom_field_values: z.array(customField).max(200).optional(),
 };
 // Include association IDs so callers can update/remove existing entries, rather than duplicate them.
-const contactResultFields = "id,etag,name,type,first_name,last_name,middle_name,prefix,title,date_of_birth,company{id,name},email_addresses{id,name,address,default_email},phone_numbers{id,name,number,default_number},addresses{id,name,street,city,province,postal_code,country},custom_field_values{id,value,custom_field{id,name}}";
+const contactResultFields = "id,etag,name,type,first_name,last_name,middle_name,prefix,title,date_of_birth,company{id,name},email_addresses{id,name,address,default_email},phone_numbers{id,name,number,default_number},addresses{id,name,street,city,province,postal_code,country},custom_field_values{id,value,custom_field}";
 const noteFields = "id,etag,subject,detail,detail_text_type,date,type,matter{id,display_number},contact{id,name},author{id,name},created_at,updated_at";
 const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] });
 const error = (message: string) => ({ content: [{ type: "text" as const, text: "Error: " + message }], isError: true });

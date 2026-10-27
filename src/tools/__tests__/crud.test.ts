@@ -17,6 +17,27 @@ beforeEach(() => { vi.clearAllMocks(); vi.stubGlobal("fetch", vi.fn().mockResolv
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Clio Manage CRUD over mocked HTTP", () => {
+  it.each([
+    ["list_contacts", {}],
+    ["create_contact", { type: "Company", name: "Field projection test" }],
+    ["update_contact", { contact_id: 7, name: "Field projection test" }],
+  ])("%s uses a contact projection accepted by Clio's single-level field parser", async (tool, args) => {
+    (fetch as any).mockImplementation(async (value: string) => {
+      const fields = new URL(value).searchParams.get("fields")!;
+      let depth = 0;
+      for (const char of fields) {
+        if (char === "{") depth++;
+        if (char === "}") depth--;
+        if (depth > 1) return response({ error: { type: "InvalidFields", message: "Nested field projection" } }, 400);
+      }
+      expect(depth).toBe(0);
+      expect(fields).toContain("custom_field_values{id,value,custom_field}");
+      return response({ data: tool === "list_contacts" ? [] : { id: 7 } });
+    });
+    const result = await invoke(tool as string, args);
+    expect(result.isError).not.toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
   it("enumerates contacts and preserves cursor filters", async () => {
     (fetch as any).mockResolvedValue(response({ data: [{ id: 1 }], meta: { records: 2, paging: { next: "https://eu.app.clio.com/api/v4/contacts.json?page_token=next" } } }));
     const result = await invoke("list_contacts", { client_only: false, type: "Person", page_token: "previous", limit: 1 });

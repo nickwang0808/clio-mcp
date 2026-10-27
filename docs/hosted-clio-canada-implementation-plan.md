@@ -2,6 +2,15 @@
 
 Prepared: 2026-10-26. Status: ready to begin offline implementation; Better Auth adoption remains conditional on Phase 1.
 
+Subsequent user decisions: target read-write capability; excluding deletion is
+under consideration, not yet an agreed complete tool policy. Read-only scope
+below is superseded by that direction. The demonstrated same-user upstream
+refresh/reconnect overwrite is deferred in [issue #1](https://github.com/nickwang0808/clio-mcp/issues/1)
+and does not block continuing the prototype. Its frequency is unknown. Keep the
+reproduction test and retain ownership, cross-identity isolation, and
+disconnect/revocation requirements. This deferral does not authorize automatic
+replay of writes with unknown outcomes or constitute production acceptance.
+
 This plan follows [the hosted requirements](hosted-clio-canada-requirements.md). It updates the proposed authentication approach and delivery order; it retains the isolation requirements and launch restrictions. It does not authorize deployment, live writes, or account provisioning.
 
 ## Intended outcome and decisions

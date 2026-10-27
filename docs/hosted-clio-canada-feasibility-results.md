@@ -5,6 +5,15 @@ Date: 2026-10-26. Tested with Node 26.11.1 on Windows, Better Auth 1.7.14,
 
 ## Decision status
 
+Subsequent user decision: defer the demonstrated same-user refresh/reconnect
+overwrite as known reliability work, tracked in [issue #1](https://github.com/nickwang0808/clio-mcp/issues/1).
+This specific race no longer blocks prototype implementation. Its production
+frequency is unknown. Keep the characterization test; its `GATE FAILURE` name
+reflects the original assessment, not the current blocking status. This deferral
+does not waive ownership, cross-identity isolation, or disconnect/revocation checks.
+The original assessment below records findings against the original requirements;
+this decision takes precedence for the refresh/reconnect race only.
+
 The library-managed account-token store does **not** meet the hosted requirements
 unchanged. Do not migrate the complete application or deploy this prototype yet.
 Better Auth remains a possible OAuth/session layer, but adopting it requires a

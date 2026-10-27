@@ -9,6 +9,11 @@ fallback, and a refresh/reconnect race. A green test run means those observation
 are reproduced; it does not mean the security acceptance gate passed.
 See [the findings](../docs/hosted-clio-canada-feasibility-results.md).
 
+The user has since deferred the same-user refresh/reconnect overwrite in
+[issue #1](https://github.com/nickwang0808/clio-mcp/issues/1). That case no longer
+blocks prototype work; retain its reproduction test. This does not make the
+remaining security acceptance checks complete.
+
 Use Node 24 or newer (native TypeScript stripping and SQLite):
 
 ```sh

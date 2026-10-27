@@ -5,6 +5,14 @@ Prepared: 2026-10-26.
 Owner: High Viz CTO.
 Repository: C:\Users\nickw\Projects\clio-mcp.
 
+Subsequent user decisions supersede the initial scope below: the hosted target
+is read-write, with deletion exclusion under consideration. The same-user
+refresh/reconnect overwrite reproduced during feasibility testing is deferred
+in [issue #1](https://github.com/nickwang0808/clio-mcp/issues/1); it does not block
+continuing the prototype. Other ownership, cross-identity isolation, and
+disconnect/revocation requirements remain. See the implementation plan and
+feasibility findings for the current decision record.
+
 ## Objective and user experience
 
 Offer a free hosted Clio MCP connector as a useful tool and content-led introduction to the agency's legal automation work. Lawyers should click Connect, sign into Clio, approve access, and use their AI assistant. They should not install servers, paste API keys, manage tokens, or create developer apps individually.

@@ -6,6 +6,7 @@ Owner: High Viz CTO.
 Repository: C:\Users\nickw\Projects\clio-mcp.
 
 Subsequent user decisions supersede the initial scope below: the hosted target
+allows signup by authenticated Canadian Clio users without invitations. It
 is read-write including deletion. Hosted document upload and audit export are
 tracked separately in issues #3 and #2, linked from the hosted runbook. The same-user
 refresh/reconnect overwrite reproduced during feasibility testing is deferred

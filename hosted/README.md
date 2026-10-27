@@ -4,6 +4,11 @@ Working offline-tested implementation; not yet accepted against live Clio or
 deployed. Clio is the only login provider. Better Auth handles browser sessions
 and downstream OAuth; the official MCP SDK v2 serves the existing Clio tools.
 
+Signup is open to Canadian Clio users; no invitation list or pre-collected user
+IDs are required. Clio authentication, validated firm/user identity, explicit
+consent, and per-connection ownership checks still apply. Automatic account
+linking remains disabled.
+
 The current policy registers **40 tools: 23 reads and 17 writes**, including
 delete_matter, delete_contact, and delete_note under the clio:write scope.
 Server-file document upload, audit export, and local authentication tools remain
@@ -61,8 +66,7 @@ the app-scoped deployment token expires after one year and must be rotated befor
 Canadian Clio credentials have been supplied. A 1 GB `clio_auth` volume in `yyz`
 and public IPv4/IPv6 addresses are provisioned. A temporary initialization Machine
 verified `/data` ownership as `1000:1000` with mode `700` and exited successfully.
-Invited identities are still required before the first successful deployment;
-application startup and mounted-volume permissions must be verified on deployment.
+Application startup and mounted-volume permissions must be verified on deployment.
 
 One-time setup in this repository's GitHub Actions settings (repository settings
 or the `production` environment):
@@ -77,7 +81,7 @@ or the `production` environment):
 Before the first deployment, provision that app in the intended Fly organization,
 its public networking, and a `clio_auth` volume in `yyz`. Ensure the mounted `/data`
 directory is writable by UID/GID 1000. Set `BETTER_AUTH_SECRET`, `CLIO_CLIENT_ID`,
-`CLIO_CLIENT_SECRET`, and `CLIO_INVITED_IDENTITIES` as Fly app secrets. Register
+and `CLIO_CLIENT_SECRET` as Fly app secrets. Register
 `HOSTED_ORIGIN/api/auth/callback/clio-ca` with the Canadian Clio app. The workflow
 does not create identities, Clio credentials, or initialize volume ownership.
 
@@ -111,7 +115,7 @@ infrastructure workflow is required for this deployment.
 | Public origin | `https://highvizcto-clio-mcp-ca.fly.dev` |
 | Health check | `/health`; succeeds after database initialization |
 | Runtime configuration | `hosted/fly.toml`; app/origin supplied by the workflow |
-| Fly secrets | `BETTER_AUTH_SECRET`, `CLIO_CLIENT_ID`, `CLIO_CLIENT_SECRET`, `CLIO_INVITED_IDENTITIES` |
+| Fly secrets | `BETTER_AUTH_SECRET`, `CLIO_CLIENT_ID`, `CLIO_CLIENT_SECRET` |
 | GitHub configuration | Variables `FLY_APP`, `HOSTED_ORIGIN`; secret `FLY_API_TOKEN` |
 
 Use the resource names above when rebuilding; volume and Machine IDs can change.
@@ -125,7 +129,6 @@ service intentionally recovers with fresh authentication storage and reconnectio
 | HOSTED_DATABASE_PATH | Absolute persistent SQLite path; normally /data/auth.sqlite |
 | BETTER_AUTH_SECRET | Separately managed high-entropy secret, at least 32 characters; keep off the volume |
 | CLIO_CLIENT_ID / CLIO_CLIENT_SECRET | Canadian Clio app credentials, supplied as deployment secrets |
-| CLIO_INVITED_IDENTITIES | Comma-separated verified identities: ca:firm-id:user-id; never email-domain authorization |
 | HOSTED_TRUST_FLY_PROXY | True only when all public traffic arrives through Fly Proxy |
 | PORT | Defaults to 8080 |
 
@@ -194,7 +197,7 @@ these warnings when upgrading.
 Accepted total-loss recovery is **fresh storage and user reconnection**. Stop the
 application, preserve failed files separately if needed, provision a fresh writable
 store, and restart. Some clients may need to remove and re-add the connector.
-Secrets and invitation configuration must survive outside the lost database.
+Deployment secrets must survive outside the lost database.
 Registrations and local history will be lost.
 
 For a wipe or lost volume, recover manually:
@@ -207,7 +210,7 @@ For a wipe or lost volume, recover manually:
    application Machine against the replacement as needed; remove stale mount
    references. Ensure `/data` is writable by UID/GID 1000 before startup.
 3. If the app itself was deleted, recreate its app name and public IPv4/IPv6
-   allocation, restore the four Fly secrets from their separately managed values,
+   allocation, restore the three Fly secrets from their separately managed values,
    and replace GitHub's app-scoped deployment token. Check the GitHub variables
    and Clio callback URI if the origin changed. An app deletion loses its secrets
    too; a volume deletion alone does not.

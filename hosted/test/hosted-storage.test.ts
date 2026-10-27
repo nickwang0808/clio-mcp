@@ -44,18 +44,23 @@ test("browser routes cannot return upstream tokens; internal retrieval still ser
   } finally { await h.close(); }
 });
 
-test("uninvited Clio identities cannot create hosted accounts", async () => {
-  const h = await authHarness({ hosted: true, invitations: new Set(["ca:A:11"]) });
+test("Canadian Clio users can connect without invitations and retain separate identities", async () => {
+  const h = await authHarness({ hosted: true });
   try {
-    await assert.rejects(h.login("carol"));
-    assert.equal(h.database.prepare('SELECT count(*) AS n FROM "user"').get()!.n, 0);
-    await h.login("alice");
+    const alice = await connectMcp(h, "alice");
+    const carol = await connectMcp(h, "carol");
+    assert.notEqual(alice.login.account.userId, carol.login.account.userId);
+    assert.equal(h.database.prepare('SELECT count(*) AS n FROM "user"').get()!.n, 2);
+    for (const [client, expected] of [[alice, "A confidential fixture"], [carol, "B confidential fixture"]] as const) {
+      const read = await client.rpc("tools/call", { name: "get_matter", arguments: { matter_id: 1 } });
+      assert.equal(JSON.parse(read.body.result.content[0].text).description, expected);
+    }
   } finally { await h.close(); }
 });
 
 test("startup rejects unknown schema versions and production rejects insecure origins", async () => {
   const database = new DatabaseSync(":memory:");
-  const config = { origin: "http://127.0.0.1:3000", secret: "test-only-012345678901234567890123456789", clientId: "test", clientSecret: "test", invitations: new Set(["ca:A:11"]) };
+  const config = { origin: "http://127.0.0.1:3000", secret: "test-only-012345678901234567890123456789", clientId: "test", clientSecret: "test" };
   try {
     await assert.rejects(createHostedAuth(database, config), /HTTPS/);
     database.exec("PRAGMA user_version = 99");

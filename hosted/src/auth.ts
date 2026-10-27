@@ -22,8 +22,6 @@ export interface HostedAuthConfig {
   secret: string;
   clientId: string;
   clientSecret: string;
-  /** Verified Clio identities, formatted ca:firm:user. No email-domain authorization. */
-  invitations: ReadonlySet<string>;
   audit?: (event: { userId: string; connectionId: string; requestId: string; tool: string; outcome: string }) => void;
 }
 
@@ -46,7 +44,7 @@ export async function createTestHostedAuth(database: DatabaseSync, config: Hoste
 async function initializeHostedAuth(database: DatabaseSync, config: HostedAuthConfig,
   endpoints: { authorize: string; token: string; api: string }) {
   const origin = new URL(config.origin);
-  if (origin.origin !== config.origin || config.secret.length < 32 || !config.clientId || !config.clientSecret || !config.invitations.size) {
+  if (origin.origin !== config.origin || config.secret.length < 32 || !config.clientId || !config.clientSecret) {
     throw new Error("Invalid hosted configuration");
   }
   let getToken!: (userId: string, accountId: string) => Promise<string>;
@@ -108,7 +106,6 @@ async function initializeHostedAuth(database: DatabaseSync, config: HostedAuthCo
         if (!parsed.success) return null;
         const data = parsed.data.data;
         const id = `ca:${data.account.id}:${data.id}`;
-        if (!config.invitations.has(id)) return null;
         return { id, name: data.name, email: data.email, emailVerified: false };
       },
     }] }), ...integration.plugins],

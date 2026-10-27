@@ -18,7 +18,6 @@ database.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_
 const origin = required("HOSTED_ORIGIN");
 const auth = await createHostedAuth(database, {
   origin, secret: required("BETTER_AUTH_SECRET"), clientId: required("CLIO_CLIENT_ID"), clientSecret: required("CLIO_CLIENT_SECRET"),
-  invitations: new Set(required("CLIO_INVITED_IDENTITIES").split(",").map(value => value.trim()).filter(Boolean)),
 });
 const server = createServer(createHostedHttpHandler(auth, origin, process.env.HOSTED_TRUST_FLY_PROXY === "true"));
 server.requestTimeout = 30_000;

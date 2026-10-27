@@ -10,6 +10,9 @@ retain SDK v1; the hosted service runs SDK v2. The original phase checklist belo
 is not a claim that every public-launch requirement has passed.
 
 Subsequent user decisions: target read-write capability including deletion.
+Signup is open to authenticated Canadian Clio users; invitation requirements in
+the original phase checklist below are superseded. Identity validation and
+connection ownership checks remain required.
 Hosted document upload and audit export are deferred to issues #3 and #2,
 linked from the runbook. Read-only scope
 below is superseded by that direction. The demonstrated same-user upstream

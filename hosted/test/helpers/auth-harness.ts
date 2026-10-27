@@ -10,7 +10,7 @@ import { createTestHostedAuth } from "../../src/auth.ts";
 import { createHostedHttpHandler } from "../../src/http.ts";
 import { navigate } from "./browser.ts";
 
-export async function authHarness({ hosted = false, databasePath = ":memory:", invitations = new Set(["ca:A:11", "ca:A:12", "ca:B:21"]) } = {}) {
+export async function authHarness({ hosted = false, databasePath = ":memory:" } = {}) {
   const clio = await clioSimulator();
   let database = new DatabaseSync(databasePath);
   const server = createServer();
@@ -47,7 +47,7 @@ export async function authHarness({ hosted = false, databasePath = ":memory:", i
   if (!hosted) await (await getMigrations(options)).runMigrations();
   const createHost = () => createTestHostedAuth(database, {
     origin, secret: options.secret, clientId: "test-clio-client", clientSecret: "test-clio-secret",
-    invitations, audit: () => {},
+    audit: () => {},
   }, clio.origin);
   let auth = hosted ? await createHost() : betterAuth(options);
   await auth.$context;

@@ -28,7 +28,9 @@ test("pinned auth plugins initialize SQLite and repeated migration is empty", as
     assert.equal(repeated.toBeCreated.length, 0);
     assert.equal(repeated.toBeAdded.length, 0);
     assert.equal(repeated.toBeAddedIndexes.length, 0);
-    await betterAuth(options).$context;
+    const context = await betterAuth(options).$context;
+    // The adapter starts this asynchronously; await it before closing SQLite.
+    await context.checkSchema?.();
   } finally {
     database.close();
   }

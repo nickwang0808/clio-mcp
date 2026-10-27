@@ -55,6 +55,8 @@ function parseRetryAfterMs(value: string): number | null {
 }
 
 async function clioFetch(url: string, init: RequestInit): Promise<Response> {
+  const hostFetch = getSessionContext()?.fetchClio;
+  if (hostFetch) return hostFetch(url, init);
   let totalWaited = 0;
   for (let attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
     const res = await fetch(url, init);

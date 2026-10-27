@@ -305,7 +305,8 @@ export async function appendAuditLog(
       ...(entry.result_count !== undefined && { result_count: entry.result_count }),
     };
 
-    await auditConfig.sink.append(full);
+    if (ctx?.appendAudit) await ctx.appendAudit(full);
+    else await auditConfig.sink.append(full);
   } catch (err: any) {
     console.error(`[audit] WARNING: Failed to write audit log: ${err.message}`);
   }

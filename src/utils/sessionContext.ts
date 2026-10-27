@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "async_hooks";
 import type { ClioTokens } from "../auth/clioOAuth.js";
 import type { ClioRegion } from "./clioRegion.js";
+import type { AuditEntry } from "./auditLog.js";
 
 /**
  * Per-request identity and token access for everything that runs inside a
@@ -15,6 +16,10 @@ export interface PendingBrokerSession {
 }
 
 export interface SessionContext {
+  /** Host-owned HTTP policy (endpoints, retries, redacted errors). Request-local, never global. */
+  fetchClio?(url: string, init: RequestInit): Promise<Response>;
+  /** Host-owned audit destination. Prevents hosted calls from using the local file sink. */
+  appendAudit?(entry: AuditEntry): Promise<void>;
   sessionId: string;
   /** Caller identity as known to the host (hosted deployments). Written to every audit entry. */
   userId?: string;

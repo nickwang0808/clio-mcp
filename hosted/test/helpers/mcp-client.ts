@@ -3,7 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import type { authHarness } from "./auth-harness.ts";
 import type { Person } from "./clio-simulator.ts";
 
-export async function connectMcp(h: Awaited<ReturnType<typeof authHarness>>, person: Person, scope = "clio:read clio:write offline_access") {
+export async function connectMcp(h: Awaited<ReturnType<typeof authHarness>>, person: Person, scope = "clio:read clio:write offline_access", alterExchange?: (body: URLSearchParams) => void) {
   const login = await h.login(person);
   const redirect = "https://client.example.test/callback";
   const registered = await fetch(`${h.origin}/api/auth/oauth2/register`, {
@@ -30,6 +30,7 @@ export async function connectMcp(h: Awaited<ReturnType<typeof authHarness>>, per
   assert.equal(callback.searchParams.get("state"), "test-client-state");
   const exchangeBody = new URLSearchParams({ grant_type: "authorization_code", client_id: client.client_id,
     code: callback.searchParams.get("code")!, redirect_uri: redirect, code_verifier: verifier, resource: `${h.origin}/api/auth/mcp` });
+  alterExchange?.(exchangeBody);
   const exchanged = await fetch(`${h.origin}/api/auth/oauth2/token`, { method: "POST", body: exchangeBody });
   assert.equal(exchanged.status, 200, await exchanged.clone().text());
   const tokens = await exchanged.json();

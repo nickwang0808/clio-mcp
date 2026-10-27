@@ -116,3 +116,48 @@ test("removing an account alone rejects grants even if a replacement row belongs
     assert.equal((await alice.rpc("tools/list", {})).status, 401);
   } finally { await h.close(); }
 });
+
+test("PKCE and resource substitution are rejected at token exchange", async () => {
+  const h = await authHarness({ hosted: true });
+  try {
+    await assert.rejects(connectMcp(h, "alice", "clio:read", body => body.set("code_verifier", "x".repeat(43))), /invalid_grant/);
+    await assert.rejects(connectMcp(h, "carol", "clio:read", body => body.set("resource", "https://other.example.test/mcp")), /invalid_target/);
+  } finally { await h.close(); }
+});
+
+test("expired MCP credentials and direct upstream credentials are rejected", async () => {
+  const h = await authHarness({ hosted: true });
+  try {
+    const alice = await connectMcp(h, "alice");
+    const upstream = await h.auth.api.getAccessToken({ body: { userId: alice.login.account.userId, accountId: alice.login.account.id } });
+    assert.equal((await alice.rpc("tools/list", {}, upstream.accessToken!)).status, 401);
+    h.database.prepare("UPDATE oauthAccessToken SET expiresAt = ? WHERE userId = ?").run(Date.now() - 60_000, alice.login.account.userId);
+    assert.equal((await alice.rpc("tools/list", {})).status, 401);
+  } finally { await h.close(); }
+});
+
+test("downstream refresh retries recover one token set within the library retry window", async () => {
+  const h = await authHarness({ hosted: true });
+  try {
+    const alice = await connectMcp(h, "alice");
+    const refresh = () => fetch(`${h.origin}/api/auth/oauth2/token`, {
+      method: "POST", body: new URLSearchParams({ grant_type: "refresh_token", client_id: alice.client.client_id,
+        refresh_token: alice.tokens.refresh_token, resource: `${h.origin}/api/auth/mcp` }),
+    });
+    const results = await Promise.all([refresh(), refresh()]);
+    assert.ok(results.some(response => response.status === 200));
+    assert.ok(results.every(response => response.status === 200 || response.status === 400));
+    const issued = await results.find(response => response.status === 200)!.json();
+    const retried = await refresh();
+    assert.equal(retried.status, 200, await retried.clone().text());
+    const recovered = await retried.json();
+    assert.equal(recovered.access_token, issued.access_token);
+    assert.equal(recovered.refresh_token, issued.refresh_token);
+    assert.equal((await alice.rpc("tools/list", {}, issued.access_token)).status, 200);
+    assert.equal(h.database.prepare("SELECT count(*) AS n FROM oauthRefreshToken WHERE userId = ? AND revoked IS NULL").get(alice.login.account.userId)!.n, 1);
+    h.database.prepare("UPDATE oauthRefreshToken SET rotationReplayExpiresAt = ? WHERE userId = ? AND revoked IS NOT NULL")
+      .run(Date.now() - 60_000, alice.login.account.userId);
+    assert.equal((await refresh()).status, 400);
+    assert.equal((await alice.rpc("tools/list", {}, issued.access_token)).status, 401);
+  } finally { await h.close(); }
+});

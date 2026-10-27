@@ -35,7 +35,9 @@ export function createMcpIntegration(options: McpIntegrationOptions) {
     scopes: ["clio:read", "clio:write", "offline_access"],
     allowDynamicClientRegistration: true,
     allowUnauthenticatedClientRegistration: true,
-    refreshTokenReuseInterval: 0,
+    // Use the MCP plugin's supported retry policy: identical refresh retries can
+    // recover the same response for 30 seconds rather than branching the grant.
+    refreshTokenReuseInterval: 30,
     storeTokens: "hashed",
     postLogin: {
       page: "/connected",

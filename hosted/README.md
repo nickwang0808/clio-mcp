@@ -46,6 +46,41 @@ are fixed. Both dependency audits reported no known vulnerabilities after update
 
 ## Configuration and startup
 
+### Automatic Fly deployment
+
+`.github/workflows/fly-deploy.yml` deploys pushes to **master**, after the reusable
+offline acceptance workflow passes (shared and hosted tests, type checking during
+the image build, and the package secret scan). The repository currently uses
+`main`; pushing to `main` does not deploy. Change the deployment trigger if `main`
+is the intended release branch; no branch rename is performed automatically.
+
+One-time setup in this repository's GitHub Actions settings (repository settings
+or the `production` environment):
+
+- Variable `FLY_APP`: the dedicated Canadian Fly app name.
+- Variable `HOSTED_ORIGIN`: its HTTPS origin, without a trailing slash, such as
+  `https://your-canadian-app.fly.dev`.
+- Secret `FLY_API_TOKEN`: an app-scoped deploy token for that app. Generate it
+  with `flyctl tokens create deploy --app YOUR_APP`; store the output directly
+  in GitHub's secret field, never in the repository or logs.
+
+Before the first deployment, provision that app in the intended Fly organization,
+its public networking, and a `clio_auth` volume in `yyz`. Ensure the mounted `/data`
+directory is writable by UID/GID 1000. Set `BETTER_AUTH_SECRET`, `CLIO_CLIENT_ID`,
+`CLIO_CLIENT_SECRET`, and `CLIO_INVITED_IDENTITIES` as Fly app secrets. Register
+`HOSTED_ORIGIN/api/auth/callback/clio-ca` with the Canadian Clio app. The workflow
+does not create identities, Clio credentials, or initialize volume ownership.
+
+The workflow uses `hosted/fly.toml`, injects the selected app/origin, serializes
+deployments without cancelling one already running, and rejects apps with more
+than one Machine. `--ha=false` avoids creating a spare Machine; the immediate
+deployment strategy deliberately accepts brief downtime for this single-process
+SQLite service. Health checks must pass before deployment succeeds. Migrations
+run during application startup on the mounted volume, never in a release command.
+
+This follows [Fly's GitHub Actions deployment pattern](https://fly.io/docs/launch/continuous-deployment-with-github-actions/).
+The workflow becomes active only after it is pushed and its settings are supplied.
+
 | Variable | Meaning |
 | --- | --- |
 | HOSTED_ORIGIN | Exact HTTPS origin, without a trailing slash or path |

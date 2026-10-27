@@ -1,0 +1,37 @@
+# App name and HTTPS origin are supplied by the deployment workflow.
+primary_region = "yyz"
+
+[build]
+  dockerfile = "hosted/Dockerfile"
+  build-target = "runtime"
+
+[env]
+  PORT = "8080"
+  HOSTED_DATABASE_PATH = "/data/auth.sqlite"
+  HOSTED_TRUST_FLY_PROXY = "true"
+
+[[mounts]]
+  source = "clio_auth"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "15s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "512mb"
+
+# One Machine only; migrations run on startup with its volume attached.
+# The mounted /data directory must be writable by UID/GID 1000.

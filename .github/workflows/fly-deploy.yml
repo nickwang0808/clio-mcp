@@ -1,0 +1,60 @@
+name: Deploy hosted Clio to Fly
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+# Do not interrupt a running deployment or overlap SQLite application updates.
+concurrency:
+  group: hosted-clio-production
+  cancel-in-progress: false
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/hosted-test.yml
+
+  deploy:
+    needs: acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      FLY_APP: ${{ vars.FLY_APP }}
+      HOSTED_ORIGIN: ${{ vars.HOSTED_ORIGIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate deployment settings
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          test -n "$FLY_API_TOKEN" || { echo 'Missing FLY_API_TOKEN secret'; exit 1; }
+          python3 - <<'PY'
+          import os, re
+          from urllib.parse import urlsplit
+          assert re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', os.environ['FLY_APP']), 'Set FLY_APP to the Canadian Fly app name'
+          origin = os.environ['HOSTED_ORIGIN']
+          url = urlsplit(origin)
+          assert url.scheme == 'https' and url.hostname and not url.username and not url.password and not url.path and not url.query and not url.fragment, 'Set HOSTED_ORIGIN to an HTTPS origin without a trailing slash'
+          PY
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Check single-Machine deployment
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          flyctl machine list --app "$FLY_APP" --json > "$RUNNER_TEMP/fly-machines.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          machines = json.loads((Path(os.environ['RUNNER_TEMP']) / 'fly-machines.json').read_text())
+          assert len(machines) <= 1, 'This SQLite service supports only one Machine; resolve scaling before deployment'
+          PY
+      - name: Deploy and wait for health checks
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: >-
+          flyctl deploy --config hosted/fly.toml --app "$FLY_APP"
+          --env "HOSTED_ORIGIN=$HOSTED_ORIGIN" --remote-only
+          --ha=false --strategy immediate --yes

@@ -2,7 +2,7 @@
 primary_region = "yyz"
 
 [build]
-  dockerfile = "hosted/Dockerfile"
+  dockerfile = "Dockerfile"
   build-target = "runtime"
 
 [env]

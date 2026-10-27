@@ -3,7 +3,7 @@ app = "replace-with-new-canadian-staging-app"
 primary_region = "yyz"
 
 [build]
-  dockerfile = "hosted/Dockerfile"
+  dockerfile = "Dockerfile"
   build-target = "runtime"
 
 [env]

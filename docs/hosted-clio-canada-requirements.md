@@ -6,7 +6,8 @@ Owner: High Viz CTO.
 Repository: C:\Users\nickw\Projects\clio-mcp.
 
 Subsequent user decisions supersede the initial scope below: the hosted target
-is read-write, with deletion exclusion under consideration. The same-user
+is read-write including deletion. Hosted document upload and audit export are
+tracked separately in issues #3 and #2, linked from the hosted runbook. The same-user
 refresh/reconnect overwrite reproduced during feasibility testing is deferred
 in [issue #1](https://github.com/nickwang0808/clio-mcp/issues/1); it does not block
 continuing the prototype. Other ownership, cross-identity isolation, and

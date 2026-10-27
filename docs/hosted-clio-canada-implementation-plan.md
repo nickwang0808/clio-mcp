@@ -9,8 +9,9 @@ behavior and outstanding acceptance work. The original self-hosted transports
 retain SDK v1; the hosted service runs SDK v2. The original phase checklist below
 is not a claim that every public-launch requirement has passed.
 
-Subsequent user decisions: target read-write capability; excluding deletion is
-under consideration, not yet an agreed complete tool policy. Read-only scope
+Subsequent user decisions: target read-write capability including deletion.
+Hosted document upload and audit export are deferred to issues #3 and #2,
+linked from the runbook. Read-only scope
 below is superseded by that direction. The demonstrated same-user upstream
 refresh/reconnect overwrite is deferred in [issue #1](https://github.com/nickwang0808/clio-mcp/issues/1)
 and does not block continuing the prototype. Its frequency is unknown. Keep the

@@ -7,7 +7,7 @@ Date: 2026-10-26. Tested with Node 26.11.1 on Windows, Better Auth 1.7.14,
 
 Implementation update: a working hosted application now exists under `hosted/`.
 It uses supported Better Auth APIs, opaque MCP credentials, immutable connection
-references, SDK v2, and 37 reused read/write tools. See the
+references, SDK v2, and 40 reused read/write tools (including deletes). See the
 [current runbook and limitations](../hosted/README.md). The early no-go language
 below describes the original stronger requirements, not a current instruction to
 stop development. No custom OAuth issuer or credential-encryption layer was added.

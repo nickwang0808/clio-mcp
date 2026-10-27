@@ -73,7 +73,7 @@ async function initializeHostedAuth(database: DatabaseSync, config: HostedAuthCo
         const url = new URL(value);
         if (url.origin !== "https://ca.app.clio.com" || !url.pathname.startsWith("/api/v4/")) throw new Error("Invalid Clio endpoint");
         const method = init.method ?? "GET";
-        if (!["GET", "POST", "PATCH", "PUT"].includes(method)) throw new Error("Clio operation is disabled");
+        if (!["GET", "POST", "PATCH", "PUT", "DELETE"].includes(method)) throw new Error("Clio operation is disabled");
         let response: Response;
         try {
           // Exactly one HTTP attempt; never replay a write whose outcome is uncertain.

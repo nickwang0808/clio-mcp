@@ -40,6 +40,51 @@ test("library OAuth grants route MCP reads and writes to the consenting user's C
   } finally { await h.close(); }
 });
 
+test("delete tools use the consenting user's connection and preserve other firms' records", async () => {
+  const h = await authHarness({ hosted: true });
+  try {
+    const alice = await connectMcp(h, "alice");
+    const bob = await connectMcp(h, "bob");
+    const carol = await connectMcp(h, "carol");
+    const listed = (await alice.rpc("tools/list", {})).body.result.tools;
+    for (const resource of ["matter", "contact", "note"]) {
+      const name = `delete_${resource}`;
+      assert.equal(listed.find((tool: { name: string }) => tool.name === name)?.annotations?.destructiveHint, true);
+      const args = { [`${resource}_id`]: 1 };
+      const denied = await bob.rpc("tools/call", { name, arguments: args });
+      assert.equal(denied.body.result.isError, true);
+      assert.equal(h.clio.requests.at(-1)?.person, "bob");
+      const before = h.clio.requests.length;
+      const injected = await alice.rpc("tools/call", { name, arguments: { ...args, accountId: carol.login.account.id } });
+      assert.ok(injected.body.error || injected.body.result?.isError);
+      assert.equal(h.clio.requests.length, before);
+      const removed = await alice.rpc("tools/call", { name, arguments: args });
+      assert.notEqual(removed.body.result.isError, true, JSON.stringify(removed.body));
+      assert.equal(h.clio.requests.at(-1)?.person, "alice");
+      assert.equal(h.clio.requests.at(-1)?.method, "DELETE");
+      // Repeating Alice's delete sees her missing record; Carol's identical ID still exists.
+      const [repeat, otherFirm] = await Promise.all([alice, carol].map(client => client.rpc("tools/call", { name, arguments: args })));
+      assert.equal(repeat.body.result.isError, true);
+      assert.notEqual(otherFirm.body.result.isError, true, JSON.stringify(otherFirm.body));
+    }
+  } finally { await h.close(); }
+});
+
+test("a delete with a lost response is not automatically replayed", async () => {
+  const h = await authHarness({ hosted: true });
+  try {
+    const alice = await connectMcp(h, "alice");
+    const before = h.clio.requests.length;
+    h.clio.dropNextWriteResponse();
+    const result = await alice.rpc("tools/call", { name: "delete_matter", arguments: { matter_id: 1 } });
+    assert.equal(result.body.result.isError, true);
+    assert.match(result.body.result.content[0].text, /Check its outcome/);
+    assert.equal(h.clio.requests.length - before, 1);
+    const read = await alice.rpc("tools/call", { name: "get_matter", arguments: { matter_id: 1 } });
+    assert.equal(read.body.result.content[0].text, "Matter 1 not found.");
+  } finally { await h.close(); }
+});
+
 test("a read-only grant cannot invoke a write, and refresh tokens are not MCP access tokens", async () => {
   const h = await authHarness({ hosted: true });
   try {
@@ -48,6 +93,14 @@ test("a read-only grant cannot invoke a write, and refresh tokens are not MCP ac
     const names = tools.body.result.tools.map((tool: { name: string }) => tool.name);
     assert.ok(names.includes("get_matter") && names.includes("list_contacts"));
     assert.ok(!names.includes("update_matter") && !names.includes("create_contact"));
+    for (const resource of ["matter", "contact", "note"]) {
+      const name = `delete_${resource}`;
+      assert.ok(!names.includes(name));
+      const before = h.clio.requests.length;
+      const denied = await alice.rpc("tools/call", { name, arguments: { [`${resource}_id`]: 1 } });
+      assert.ok(denied.body.error || denied.body.result?.isError);
+      assert.equal(h.clio.requests.length, before);
+    }
     const before = h.clio.requests.length;
     const write = await alice.rpc("tools/call", { name: "update_matter", arguments: { matter_id: 1, description: "Denied" } });
     assert.ok(write.body.error || write.body.result?.isError);

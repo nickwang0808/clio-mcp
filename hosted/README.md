@@ -4,10 +4,14 @@ Working offline-tested implementation; not yet accepted against live Clio or
 deployed. Clio is the only login provider. Better Auth handles browser sessions
 and downstream OAuth; the official MCP SDK v2 serves the existing Clio tools.
 
-The current policy registers **37 tools: 23 reads and 14 writes**. Exclusions:
-three delete tools, server-file document upload, audit export, and local
-authentication tools. Updates can still be destructive. Upload requirements and
-the final deletion policy need confirmation before claiming full capability.
+The current policy registers **40 tools: 23 reads and 17 writes**, including
+delete_matter, delete_contact, and delete_note under the clio:write scope.
+Server-file document upload, audit export, and local authentication tools remain
+excluded. Hosted replacements are tracked in [document upload #3](https://github.com/nickwang0808/clio-mcp/issues/3)
+and [audit export #2](https://github.com/nickwang0808/clio-mcp/issues/2).
+Clients that support tool filtering can hide delete tools. This is a client
+preference, not server-enforced authorization: clio:write grants include deletes,
+subject to the connected user's Clio permissions. Read-only grants exclude them.
 
 Self-hosted transports retain SDK v1 for compatibility. A small registration
 adapter shares their handlers with hosted SDK v2. Shared schemas use Zod v4;
@@ -34,7 +38,7 @@ docker run --rm --network none clio-hosted-test
 docker build --target runtime -f hosted/Dockerfile -t clio-hosted-runtime .
 ```
 
-Completed locally: root build, 594 shared tests, 22 hosted tests, hosted type
+Completed locally: root build, 594 shared tests, 24 hosted tests, hosted type
 checks, Linux suites with networking disabled, package secret scan, and runtime
 startup/health with synthetic configuration. Three original `GATE FAILURE`
 tests reproduce known limitations; passing them does not mean those limitations
@@ -134,8 +138,9 @@ erase a database following a decryption or migration failure.
 - Verify the intended AI client's registration, scopes, browser, and MCP protocol.
   Automated HTTP tests exercise 2025-era stateless compatibility through SDK v2;
   live client compatibility has not been demonstrated.
-- Resolve pilot upload scope and deletion policy. The original server-file upload
-  cannot be exposed as-is on a shared service.
+- Implement agent-friendly upload and tenant-safe audit export in issues #3 and #2
+  before exposing those tools. The original server-file upload cannot be exposed
+  as-is on a shared service.
 - Complete authorized live tests across two Canadian firms and differently
   permissioned users, with fictional data and explicitly authorized writes.
 - Review remaining concurrency/revocation cases, load and rate limits, response

@@ -29,10 +29,11 @@ export async function clioSimulator() {
   const credentials = new Map<string, Person>();
   const refreshCredentials = new Map<string, Person>();
   const matters = { A: "A confidential fixture", B: "B confidential fixture" };
+  const deleted = new Set<string>();
   const profiles = new Map<Person, unknown>();
   let dropWriteResponse = false;
   let refreshGate: { entered(): void; release: Promise<void> } | undefined;
-  const requests: { person: Person; token: string; path: string }[] = [];
+  const requests: { person: Person; token: string; path: string; method: string }[] = [];
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url!, "http://127.0.0.1");
@@ -92,8 +93,19 @@ export async function clioSimulator() {
       const token = req.headers.authorization?.replace(/^Bearer /, "") ?? "";
       const person = credentials.get(token);
       if (!person) return json(401, { error: "unauthorized" });
-      requests.push({ person, token, path: url.pathname });
+      requests.push({ person, token, path: url.pathname, method: req.method! });
       if (url.pathname === "/api/v4/users/who_am_i.json") return json(200, { data: profiles.has(person) ? profiles.get(person) : people[person] });
+      if (/^\/api\/v4\/(matters|contacts|notes)\/1\.json$/.test(url.pathname)) {
+        if (person === "bob") return json(403, { error: "forbidden" });
+        const key = `${people[person].account.id}:${url.pathname}`;
+        if (deleted.has(key)) return json(404, { error: "not_found" });
+        if (req.method === "DELETE") {
+          deleted.add(key);
+          if (dropWriteResponse) { dropWriteResponse = false; res.destroy(); return; }
+          res.writeHead(204);
+          return res.end();
+        }
+      }
       if (url.pathname === "/api/v4/matters/1.json") {
         if (person === "bob") return json(403, { error: "forbidden" });
         const firm = people[person].account.id;

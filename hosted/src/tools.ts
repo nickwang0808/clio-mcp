@@ -16,7 +16,7 @@ export function registerHostedTools(server: McpServer, scopes: ReadonlySet<strin
   // This adapter implements the only method used when auth/resources are disabled.
   registerAllTools(facade as unknown as Parameters<typeof registerAllTools>[0], {
     auth: "none", resources: false,
-    // Delete tools remain disabled pending the final product policy. Updates can still be destructive.
-    exclude: ["delete_matter", "delete_contact", "delete_note", "upload_document", "export_audit_log"],
+    // Upload and audit export need hosted, owner-isolated implementations.
+    exclude: ["upload_document", "export_audit_log"],
   });
 }

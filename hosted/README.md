@@ -1,7 +1,7 @@
 # Hosted Clio Canada
 
-Working offline-tested implementation; not yet accepted against live Clio or
-deployed. Clio is the only login provider. Better Auth handles browser sessions
+Deployed to the Canadian Fly app on 2026-10-27 through GitHub Actions; live Clio
+login and data-operation acceptance are still pending. Clio is the only login provider. Better Auth handles browser sessions
 and downstream OAuth; the official MCP SDK v2 serves the existing Clio tools.
 
 Signup is open to Canadian Clio users; no invitation list or pre-collected user
@@ -66,7 +66,12 @@ the app-scoped deployment token expires after one year and must be rotated befor
 Canadian Clio credentials have been supplied. A 1 GB `clio_auth` volume in `yyz`
 and public IPv4/IPv6 addresses are provisioned. A temporary initialization Machine
 verified `/data` ownership as `1000:1000` with mode `700` and exited successfully.
-Application startup and mounted-volume permissions must be verified on deployment.
+The first deployment verified non-root startup, volume access, and automatic
+database initialization. Fly mounted `/data` as `1000:1000` with mode `755`.
+Public smoke checks passed: health/login/discovery returned 200; unauthenticated
+MCP returned 401 with a Bearer challenge. One application Machine runs in `yyz`.
+The successful [deployment run](https://github.com/nickwang0808/clio-mcp/actions/runs/40560428548)
+deployed commit `6ed7a81` after the offline acceptance suite passed.
 
 One-time setup in this repository's GitHub Actions settings (repository settings
 or the `production` environment):
@@ -93,7 +98,7 @@ SQLite service. Health checks must pass before deployment succeeds. Migrations
 run during application startup on the mounted volume, never in a release command.
 
 This follows [Fly's GitHub Actions deployment pattern](https://fly.io/docs/launch/continuous-deployment-with-github-actions/).
-The workflow becomes active only after it is pushed and its settings are supplied.
+The workflow is active on `main`, with its deployment settings configured.
 
 ### Infrastructure inventory and ownership
 
@@ -110,7 +115,7 @@ infrastructure workflow is required for this deployment.
 | Application Machine | One process, shared CPU, 1 CPU, 512 MB RAM |
 | Persistent volume | `clio_auth`, 1 GB, encrypted, in `yyz`, mounted at `/data` |
 | Database | `/data/auth.sqlite` and its SQLite WAL/SHM sidecars |
-| Volume permissions | UID/GID `1000:1000`; initialized directory mode `700` |
+| Volume permissions | UID/GID `1000:1000`; Fly mounted directory mode `755` on first deployment |
 | Public network | Shared IPv4 and public IPv6; HTTPS on port 443 to application port 8080 |
 | Public origin | `https://highvizcto-clio-mcp-ca.fly.dev` |
 | Health check | `/health`; succeeds after database initialization |
@@ -256,8 +261,8 @@ erase a database following a decryption or migration failure.
   sizes, populated schema upgrades, monitoring, and retention before public claims.
 - Configure separate staging secrets, origin, volume permissions, and Clio app
   distribution/approval requirements. Preserve the US demo. Canadian infrastructure
-  has been provisioned as recorded above; the application has not yet been deployed
-  or pushed by this work.
+  and the application are deployed as recorded above. Live Clio and actual AI-client
+  acceptance remain outstanding.
 
 MIT attribution for reused Oktopeak code remains in the root LICENSE. See
 [the plan](../docs/hosted-clio-canada-implementation-plan.md) and

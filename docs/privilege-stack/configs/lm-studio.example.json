@@ -3,8 +3,8 @@
 
   "mcpServers": {
     "clio": {
-      "command": "npx",
-      "args": ["-y", "@oktopeak/clio-mcp"],
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/clio-mcp/build/index.js"],
       "env": {
         "CLIO_CLIENT_ID": "REPLACE_WITH_YOUR_CLIO_CLIENT_ID",
         "CLIO_CLIENT_SECRET": "REPLACE_WITH_YOUR_CLIO_CLIENT_SECRET",

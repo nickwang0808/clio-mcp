@@ -1,5 +1,5 @@
 /**
- * Library entry point: `import { ... } from "@oktopeak/clio-mcp/lib"`.
+ * Library entry point: `import { ... } from "@nickwang0808/clio-mcp/lib"`.
  *
  * Everything a host needs to run the connector's tools inside its own server:
  * the tool registry, the session context seam, the audit sink, the pure Clio

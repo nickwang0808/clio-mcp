@@ -59,7 +59,7 @@ export const CUSTOM_FIELD_PERMISSION_HINT =
   "not covering custom fields, but it has also been reported on an account owner's own token, " +
   "which that explanation does not fit. Ask a Clio administrator to confirm the connecting user " +
   "has custom field access; if that is already true, please open an issue at " +
-  "https://github.com/oktopeak/clio-mcp/issues with your region and the exact response, because " +
+  "https://github.com/nickwang0808/clio-mcp/issues with your region and the exact response, because " +
   "we have not been able to reproduce it.";
 
 /** Shorter form, embedded in a successful response whose values came back stripped. */

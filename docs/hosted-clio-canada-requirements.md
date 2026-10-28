@@ -17,11 +17,11 @@ feasibility findings for the current decision record.
 
 ## Objective and user experience
 
-Offer a free hosted Clio MCP connector as a useful tool and content-led introduction to the agency's legal automation work. Lawyers should click Connect, sign into Clio, approve access, and use their AI assistant. They should not install servers, paste API keys, manage tokens, or create developer apps individually.
+Provide a free hosted Clio MCP connector so users can access their Clio records through an AI assistant. Lawyers should click Connect, sign into Clio, approve access, and use their AI assistant. They should not install servers, paste API keys, manage tokens, or create developer apps individually.
 
 Support multiple users across multiple law firms on one hosted service. Start with Clio Manage Canada only and read-only tools. Each person connects their own Clio identity; firm membership does not grant access to another person's connection.
 
-Retain a documented self-hosting option. Local installation is not the primary hosted customer experience.
+Retain a documented self-hosting option. Local installation is not the primary hosted user experience.
 
 ## Verified current state and source discrepancy
 

@@ -198,7 +198,7 @@ describe("list_custom_fields permission handling", () => {
     // name a settings screen: the cause is unconfirmed and the two candidate
     // explanations point at different places.
     expect(result.content[0].text).toMatch(/not confirmed/);
-    expect(result.content[0].text).toContain("github.com/oktopeak/clio-mcp/issues");
+    expect(result.content[0].text).toContain("github.com/nickwang0808/clio-mcp/issues");
   });
 
   it("leaves other errors alone", async () => {

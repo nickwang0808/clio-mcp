@@ -33,7 +33,7 @@ One hosted service lets individual users from multiple Canadian law firms connec
 - Use one Fly Machine, one application process, and SQLite on a persistent volume. No managed PostgreSQL service is needed for this scope.
 - Start Canada-only, read-only, with an invitation-limited pilot. Each user has an individual connection, including users in the same firm.
 - Preserve the existing US demo and local/self-hosted functionality. Do not migrate US credentials into Canada.
-- Reuse code where it saves work. Preserve the MIT license and required Oktopeak notices for reused code; a complete rewrite is not necessary to operate and brand the hosted service.
+- Reuse code where it saves work. Preserve the MIT license and required copyright notices for reused code; a complete rewrite is not necessary to operate and brand the hosted service.
 
 The authentication relationship remains:
 

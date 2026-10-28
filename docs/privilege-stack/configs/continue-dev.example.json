@@ -1,5 +1,5 @@
 {
-  "_comment": "Continue.dev config example for Clio MCP plus a local Ollama model. Save this to ~/.continue/config.json (or use Continue's settings UI). Requires: Ollama running locally with a model pulled (e.g., 'ollama pull llama4:70b'), and our @oktopeak/clio-mcp installed via npm. Tested with Continue.dev VS Code extension and Ollama 0.6+ on macOS. Replace REPLACE_WITH_* values.",
+  "_comment": "Continue.dev config example for Clio MCP plus a local Ollama model. Save this to ~/.continue/config.json (or use Continue's settings UI). Requires: Ollama running locally with a model pulled (e.g., 'ollama pull llama4:70b'), and this repository built locally. Tested with Continue.dev VS Code extension and Ollama 0.6+ on macOS. Replace the absolute build path and REPLACE_WITH_* values.",
 
   "models": [
     {
@@ -21,8 +21,8 @@
     "clio": {
       "transport": {
         "type": "stdio",
-        "command": "npx",
-        "args": ["-y", "@oktopeak/clio-mcp"]
+        "command": "node",
+        "args": ["/ABSOLUTE/PATH/TO/clio-mcp/build/index.js"]
       },
       "env": {
         "CLIO_CLIENT_ID": "REPLACE_WITH_YOUR_CLIO_CLIENT_ID",

@@ -91,7 +91,7 @@ export function registerMatterStageTools(server: McpServer): void {
                 `Error: ${err.message}\n\nClio refused /matter_stages.json with a 403 even though the token ` +
                 `is valid. The likeliest reason is that the connecting Clio user's permission set does not ` +
                 `cover matter stages, so a Clio administrator is the place to start. If that is already in ` +
-                `place, please open an issue at https://github.com/oktopeak/clio-mcp/issues with your region ` +
+                `place, please open an issue at https://github.com/nickwang0808/clio-mcp/issues with your region ` +
                 `and the exact response.`,
             }],
             isError: true,

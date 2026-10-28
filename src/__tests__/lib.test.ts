@@ -19,7 +19,7 @@ const EXPECTED_EXPORTS = [
   "resetAudit", "resolveRegion", "runWithSessionContext", "sessionStorage", "singleFlight",
 ].sort();
 
-describe("@oktopeak/clio-mcp/lib", () => {
+describe("@nickwang0808/clio-mcp/lib", () => {
   it("exports exactly the documented surface", async () => {
     const lib = await import("../lib.js");
     expect(Object.keys(lib).sort()).toEqual(EXPECTED_EXPORTS);

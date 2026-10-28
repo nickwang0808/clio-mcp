@@ -1,6 +1,6 @@
 # Contact, matter and note CRUD
 
-This local development fork adds `list_contacts`, `create_contact`, `update_contact`, `delete_contact`, `delete_matter`, `get_note`, `update_note` and `delete_note`. Existing `create_note` now supports contact notes as well as matter notes. The server has 45 tools, including 18 Clio write tools. `READ_ONLY=true` excludes all 18 writes. Existing regional/session OAuth routing and audit sinks remain in use.
+This project provides `list_contacts`, `create_contact`, `update_contact`, `delete_contact`, `delete_matter`, `get_note`, `update_note` and `delete_note`. Existing `create_note` now supports contact notes as well as matter notes. The server has 45 tools, including 18 Clio write tools. `READ_ONLY=true` excludes all 18 writes. Existing regional/session OAuth routing and audit sinks remain in use.
 
 ## Official Clio Manage sources
 

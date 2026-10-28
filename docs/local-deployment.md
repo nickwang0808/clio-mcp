@@ -15,7 +15,7 @@ This guide uses **single-user stdio mode**: the client and connector communicate
 
 These instructions target Canada. The inherited local implementation also has other region settings; those are not covered by our Canadian live acceptance evidence.
 
-## 2. Download and build this fork
+## 2. Download and build this project
 
 Run these commands one at a time:
 
@@ -26,7 +26,7 @@ npm ci
 npm run build
 ```
 
-Success means the build completes without errors and `build/index.js` exists. Keep this directory: your client will run the built file from here. Do not substitute an `npx @oktopeak/clio-mcp` command; that installs the upstream distribution, not this fork.
+Success means the build completes without errors and `build/index.js` exists. Keep this directory: your client will run the built file from here. Use the local build path in your client configuration; these instructions do not require a published npm package.
 
 ## 3. Register your Clio application
 

@@ -115,7 +115,7 @@ describe("list_matter_stages", () => {
       const result = await handlers["list_matter_stages"]({}) as any;
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("permission set");
-      expect(result.content[0].text).toContain("github.com/oktopeak/clio-mcp/issues");
+      expect(result.content[0].text).toContain("github.com/nickwang0808/clio-mcp/issues");
     });
 
     it("returns other failures as a result rather than throwing", async () => {

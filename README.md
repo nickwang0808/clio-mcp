@@ -2,7 +2,7 @@
 
 Connect an AI assistant to Clio Manage to find records and carry out work on your behalf. Ask for open matters, find a contact, create a task, or update a note. MCP (Model Context Protocol) is the connection between your assistant and these tools.
 
-This fork is maintained by [Nick Wang](https://github.com/nickwang0808). The Canadian hosted service is offered free to introduce firms to the maintainer's work. You can also run the code on infrastructure you control. Original MIT license attribution is preserved below.
+This project provides tools for connecting AI assistants to Clio. Use the free Canadian hosted connector, deploy your own server, or run it locally. Setup instructions, supported operations, and known limitations are documented below.
 
 **Current status:** an early hosted service with open signup for Canadian Clio accounts. Automated isolation tests and one-account live Canadian CRUD have passed. Live testing across multiple firms and ChatGPT retesting remain outstanding. This project does not claim an independent security audit, compliance certification, or availability guarantee.
 
@@ -10,9 +10,9 @@ This fork is maintained by [Nick Wang](https://github.com/nickwang0808). The Can
 
 | Option | Who runs the connector and stores its credentials? | Start here |
 | --- | --- | --- |
-| **I host — use our service** | The project maintainer, on Fly.io in Toronto | [Connect below](#use-the-hosted-service) |
-| **You host — your own cloud server** | Your firm or its IT provider, in its own Fly account | [Cloud deployment guide](docs/cloud-deployment.md) |
-| **Your local machine hosts** | Your computer, under your operating-system account | [Local setup guide](docs/local-deployment.md) |
+| **Use the hosted connector** | The project maintainer, on Fly.io in Toronto | [Connect below](#use-the-hosted-service) |
+| **Run your own cloud server** | Your firm or its IT provider, in its own Fly account | [Cloud deployment guide](docs/cloud-deployment.md) |
+| **Run locally** | Your computer, under your operating-system account | [Local setup guide](docs/local-deployment.md) |
 
 The cloud options use the same Canadian multi-user application. The local option uses the existing single-user stdio application, with a different authentication and storage design. Installing a connector in an AI client is not the same as hosting a server yourself.
 
@@ -102,8 +102,8 @@ These are engineering controls and evidence for your firm's review. They are not
 
 ## Support, maintenance, and license
 
-For support, email [nick@highvizcto.com](mailto:nick@highvizcto.com). You can also use this fork's [issues](https://github.com/nickwang0808/clio-mcp/issues) for ordinary bugs and feature requests. Include the client, approximate time, tool name, and a sanitized error. Do not include credentials or client records. Send security reports privately to the same email address; see [SECURITY.md](SECURITY.md) for reporting instructions.
+For support, email [nick@highvizcto.com](mailto:nick@highvizcto.com). You can also use the project’s [issues](https://github.com/nickwang0808/clio-mcp/issues) for ordinary bugs and feature requests. Include the client, approximate time, tool name, and a sanitized error. Do not include credentials or client records. Send security reports privately to the same email address; see [SECURITY.md](SECURITY.md) for reporting instructions.
 
-This is a fork of [Oktopeak's Clio MCP](https://github.com/oktopeak/clio-mcp). Original copyright and MIT terms remain in [LICENSE](LICENSE). This fork adds the Canadian hosted service and shared CRUD changes; it is not presented as an official Clio product. Existing npm/package metadata still uses the upstream name, so follow these source-based guides to get this fork's code.
+This project is independently maintained and includes a Canadian hosted service and shared CRUD tools. It is not an official Clio product. Original copyright notices and MIT terms are preserved in [LICENSE](LICENSE). Follow the source-based setup guides; the package and registry metadata describe this project’s distribution identity, not a confirmed published release.
 
 For technical review: [cloud deployment](docs/cloud-deployment.md), [local setup](docs/local-deployment.md), [hosted implementation/runbook](hosted/README.md), and [CRUD reference](docs/crud.md).

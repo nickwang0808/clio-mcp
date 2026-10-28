@@ -248,7 +248,7 @@ export async function clioGetWithFieldFallback(
         "Clio rejected part of this request's field selection, so it was retried without the " +
         "optional expansions. Some fields, custom fields among them, are missing from this " +
         "response and are not necessarily empty in Clio. Please report this at " +
-        `https://github.com/oktopeak/clio-mcp/issues quoting: ${err.message}`,
+        `https://github.com/nickwang0808/clio-mcp/issues quoting: ${err.message}`,
     };
   }
 }

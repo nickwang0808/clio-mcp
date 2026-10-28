@@ -293,6 +293,6 @@ erase a database following a decryption or migration failure.
   and the application are deployed as recorded above. Multi-firm live acceptance
   and ChatGPT retesting remain outstanding.
 
-MIT attribution for reused Oktopeak code remains in the root LICENSE. See
+MIT attribution for reused code remains in the root LICENSE. See
 [the plan](../docs/hosted-clio-canada-implementation-plan.md) and
 [the original findings](../docs/hosted-clio-canada-feasibility-results.md).

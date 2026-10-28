@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Releases before this file existed are described on the [GitHub Releases](https://github.com/oktopeak/clio-mcp/releases) page.
+All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
@@ -166,7 +166,7 @@ wrong and we will turn it around quickly.
   annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`) on every
   tool. A tool missing from the registry is treated as a write tool, so
   forgetting to classify a new one fails closed.
-- **Library mode.** `@oktopeak/clio-mcp/lib` exports the Clio OAuth flow and
+- **Library mode.** `@nickwang0808/clio-mcp/lib` exports the Clio OAuth flow and
   the registry with typings, for hosts that embed the connector and manage
   their own sessions rather than shelling out to the binary.
 - **Broker OAuth mode.** With `TOKEN_BROKER_URL` set instead of
@@ -267,7 +267,7 @@ that reason; `latest` stays on 2.0.1.
 - `src/tools/index.ts`: one registry (`registerAllTools`, `TOOL_META`, `WRITE_TOOLS`) used by the stdio and HTTP entry points; new tools must be listed there (`registry.test.ts` enforces it).
 - `SECURITY.md` with the reporting address, response times and scope.
 - Audit log: `user_id` and `request_id` fields for hosted deployments; `configureAudit({ sink, redact })` lets a host replace the file with its own store; `readAuditLog` accepts `user_id` and `session_id` filters.
-- **Library entry point** `@oktopeak/clio-mcp/lib` (also the package default export) with typings: the tool registry, the session-context seam (`runWithSessionContext`, `requireSessionContext`), the audit sink, pure Clio OAuth functions that take explicit credentials and a region (`buildClioAuthorizeUrl`, `exchangeClioCode`, `refreshClioTokens`, `fetchClioWhoAmI`) with PKCE helpers, region helpers that accept a region code, and the Clio HTTP client. See "Using the connector as a library" in the README.
+- **Library entry point** `@nickwang0808/clio-mcp/lib` (also the package default export) with typings: the tool registry, the session-context seam (`runWithSessionContext`, `requireSessionContext`), the audit sink, pure Clio OAuth functions that take explicit credentials and a region (`buildClioAuthorizeUrl`, `exchangeClioCode`, `refreshClioTokens`, `fetchClioWhoAmI`) with PKCE helpers, region helpers that accept a region code, and the Clio HTTP client. See "Using the connector as a library" in the README.
 - `registerAllTools` options `exclude` and `complianceNotice`; `registerResources(server, { complianceNotice })`.
 - CI workflow (Node 20 and 22: build, test, secret scan) and `npm run verify:no-secrets`, which now also runs in `prepublishOnly`.
 - `CLIO_REGION` now accepts `au` (https://au.app.clio.com) and `ca` (https://ca.app.clio.com) in addition to `us` and `eu`, for both the API base URL and the OAuth authorize/token URLs. The region-to-hostname map lives in one place (`src/utils/clioRegion.ts`) and is imported by the API client, the OAuth flow, and the HTTP server.
